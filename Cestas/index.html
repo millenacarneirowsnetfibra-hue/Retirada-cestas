@@ -68,6 +68,76 @@
             --radius-md: 12px;
             --radius-lg: 16px;
         }
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Controle de Retirada de Cestas - WSNET</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module">
+        // Configuração Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc,
+            getDocs,
+            query,
+            where,
+            updateDoc,
+            deleteDoc,
+            doc,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCeuevUqlHbvwYKlwv8MOD6yxAycfSNmwk",
+            authDomain: "controle-cestas-b332b.firebaseapp.com",
+            projectId: "controle-cestas-b332b",
+            storageBucket: "controle-cestas-b332b.firebasestorage.app",
+            messagingSenderId: "917123925292",
+            appId: "1:917123925292:web:fb727ea217745c00a91889"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Exportar funções Firebase para uso global
+        window.firebaseDb = db;
+        window.firebaseCollections = { collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc, onSnapshot };
+        window.firebaseInitialized = true;
+    </script>
+    <style>
+        /* ====== VARIÁVEIS DA PALETA WSNET ====== */
+        :root {
+            --wsnet-primary: #0066CC;
+            --wsnet-primary-dark: #004C99;
+            --wsnet-primary-light: #3399FF;
+            --wsnet-secondary: #0099FF;
+            --wsnet-accent: #66CCFF;
+            --wsnet-success: #00CC66;
+            --wsnet-warning: #FF9900;
+            --wsnet-danger: #FF3333;
+            --wsnet-info: #0099CC;
+            --wsnet-bg-light: #F0F8FF;
+            --wsnet-bg-card: #FFFFFF;
+            --wsnet-border: #E0F0FF;
+            --wsnet-text-dark: #003366;
+            --wsnet-text-medium: #666666;
+            --wsnet-text-light: #999999;
+            --shadow-sm: 0 2px 8px rgba(0, 102, 204, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 102, 204, 0.12);
+            --shadow-lg: 0 8px 24px rgba(0, 102, 204, 0.16);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
 
         * {
             margin: 0;
