@@ -937,7 +937,7 @@
 </head>
 <body>
     <!-- Tela de Login -->
-    <div id="loginScreen" class="login-screen">
+    <div id="loginScreen" class="login-screen" style="display: none;">
         <div class="login-container">
             <div class="login-card">
                 <div class="login-logo">
@@ -2928,7 +2928,7 @@
             
             if (ultimasRetiradas.length > 0) {
                 container.innerHTML = ultimasRetiradas.map(retirada => {
-                    const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
+                    const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                     return `
                         <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border);" onclick="verDetalhesRetirada('${retirada.id}')">
                             <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
