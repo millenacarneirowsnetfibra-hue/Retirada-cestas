@@ -1267,6 +1267,14 @@
                                 </select>
                             </div>
                             <div class="filter-group">
+                                <label class="form-label">Filtrar por Status:</label>
+                                <select class="form-control" id="filtroStatusColaboradores" onchange="filtrarColaboradores()">
+                                    <option value="ativo">Ativos</option>
+                                    <option value="inativo">Inativos</option>
+                                    <option value="todos">Todos</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
                                 <label class="form-label">Buscar:</label>
                                 <div class="search-box">
                                     <span class="material-icons">search</span>
@@ -1294,6 +1302,7 @@
                                 <div style="flex: 1;">Cidade</div>
                                 <div style="flex: 1;">Departamento</div>
                                 <div style="flex: 1; text-align: center;">Dependentes</div>
+                                <div style="flex: 1; text-align: center;">Status</div>
                                 <div style="flex: 1; text-align: center;">Ações</div>
                             </div>
                             <div id="listaColaboradores">
@@ -1355,6 +1364,14 @@
                                     <option value="Peruíbe">Peruíbe</option>
                                 </select>
                             </div>
+                            <div class="filter-group">
+                                <label class="form-label">Tipo de Lista:</label>
+                                <select class="form-control" id="tipoListaRelatorio" onchange="carregarRelatorioManual()">
+                                    <option value="ambas">Ambas as Listas</option>
+                                    <option value="retirados">Apenas Retirados</option>
+                                    <option value="nao_retirados">Apenas Não Retirados</option>
+                                </select>
+                            </div>
                             <div class="filter-group" style="align-self: flex-end;">
                                 <button type="button" class="btn btn-primary" onclick="carregarRelatorioManual()" id="btnGerarRelatorio">
                                     <span class="material-icons">search</span>
@@ -1411,7 +1428,7 @@
 
                         <!-- Seções de Relatório -->
                         <div style="display: grid; gap: 24px;">
-                            <div class="card">
+                            <div class="card" id="cardRetirados" style="display: none;">
                                 <div class="card-header">
                                     <h3 class="card-title">
                                         <span class="material-icons">check_circle</span>
@@ -1428,7 +1445,7 @@
                                 </div>
                             </div>
 
-                            <div class="card">
+                            <div class="card" id="cardNaoRetiraram" style="display: none;">
                                 <div class="card-header">
                                     <h3 class="card-title">
                                         <span class="material-icons">pending_actions</span>
@@ -1436,23 +1453,6 @@
                                     </h3>
                                 </div>
                                 <div id="listaNaoRetiraram" style="padding: 16px;">
-                                    <div style="text-align: center; padding: 20px;">
-                                        <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
-                                        <p style="color: var(--wsnet-text-light); margin-top: 12px;">
-                                            Selecione os filtros e clique em "Gerar Relatório"
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <span class="material-icons">history</span>
-                                        Histórico de Retiradas do Mês
-                                    </h3>
-                                </div>
-                                <div id="historicoRetiradas" style="padding: 16px;">
                                     <div style="text-align: center; padding: 20px;">
                                         <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
                                         <p style="color: var(--wsnet-text-light); margin-top: 12px;">
@@ -1506,6 +1506,14 @@
                         <label class="form-label">Departamento *</label>
                         <select class="form-control" id="departamentoColaborador" required>
                             <option value="">Selecione o departamento...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status *</label>
+                        <select class="form-control" id="statusColaborador" required>
+                            <option value="ativo" selected>Ativo</option>
+                            <option value="inativo">Inativo</option>
                         </select>
                     </div>
                 </form>
@@ -1781,6 +1789,32 @@
         </div>
     </div>
 
+    <!-- Modal Cancelar Retirada -->
+    <div id="modalCancelarRetirada" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Cancelar Retirada</h3>
+                <span class="material-icons" style="cursor: pointer;" onclick="closeModal('modalCancelarRetirada')">close</span>
+            </div>
+            <div class="modal-body">
+                <div id="listaRetiradasParaCancelar">
+                    <!-- Lista de retiradas será preenchida via JavaScript -->
+                </div>
+                <div class="form-group" style="margin-top: 20px;">
+                    <label class="form-label">Motivo do Cancelamento:</label>
+                    <textarea class="form-control" id="motivoCancelamento" rows="3" placeholder="Digite o motivo do cancelamento..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalCancelarRetirada')">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarCancelamentoRetirada()">
+                    <span class="material-icons">delete</span>
+                    Cancelar Retirada
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ==================== SISTEMA COMPLETO ====================
         let currentUser = null;
@@ -1796,6 +1830,7 @@
         let escutaColaboradoresAtiva = false;
         let escutaRetiradasAtiva = false;
         let escutaEmpresasAtiva = false;
+        let retiradaParaCancelar = null;
         
         // IMPORTANTE: Agora o mês atual é carregado do localStorage sempre que o sistema inicia
         let mesAtual = null; // Será carregado após login
@@ -1987,6 +2022,23 @@
                     return u.email.toLowerCase() === email && u.senha === senha;
                 });
             }
+
+            // Função para verificar se usuário está logado
+            getLoggedInUser() {
+                try {
+                    return JSON.parse(localStorage.getItem('loggedInUser'));
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            setLoggedInUser(user) {
+                localStorage.setItem('loggedInUser', JSON.stringify(user));
+            }
+
+            clearLoggedInUser() {
+                localStorage.removeItem('loggedInUser');
+            }
         }
 
         // ==================== FUNÇÕES RESPONSIVAS ====================
@@ -2020,6 +2072,9 @@
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('mainApp').style.display = 'none';
             currentUser = null;
+            
+            const db = new LocalDatabase();
+            db.clearLoggedInUser();
         }
 
         function showMainApp() {
@@ -2072,6 +2127,9 @@
                     if (usuario) {
                         currentUser = usuario;
                         
+                        // Salvar usuário logado no localStorage
+                        db.setLoggedInUser(usuario);
+                        
                         // IMPORTANTE: Carregar o mês atual do localStorage
                         mesAtual = db.getMesAtual();
                         console.log('Mês atual carregado do localStorage:', mesAtual);
@@ -2097,6 +2155,29 @@
             }, 500);
         }
 
+        // Verificar se usuário já está logado ao carregar a página
+        function checkLoggedInUser() {
+            const db = new LocalDatabase();
+            const loggedInUser = db.getLoggedInUser();
+            
+            if (loggedInUser) {
+                currentUser = loggedInUser;
+                
+                // IMPORTANTE: Carregar o mês atual do localStorage
+                mesAtual = db.getMesAtual();
+                console.log('Mês atual carregado do localStorage:', mesAtual);
+                
+                document.getElementById('userName').textContent = loggedInUser.nome;
+                document.getElementById('userRole').textContent = loggedInUser.role === 'admin' ? 'Admin' : 'Registrador';
+                document.getElementById('userRole').className = 'user-role';
+
+                setupUserPermissions();
+                showMainApp();
+            } else {
+                showLoginScreen();
+            }
+        }
+
         function setupUserPermissions() {
             const adminButtons = document.getElementById('adminButtons');
             const menuItems = document.querySelectorAll('.menu-item');
@@ -2119,6 +2200,9 @@
         }
 
         function logout() {
+            const db = new LocalDatabase();
+            db.clearLoggedInUser();
+            
             currentUser = null;
             colaboradoresLista = [];
             retiradasLista = [];
@@ -2307,9 +2391,10 @@
                 const empresa = document.getElementById('empresaColaborador').value;
                 const cidade = document.getElementById('cidadeColaborador').value;
                 const departamento = document.getElementById('departamentoColaborador').value;
+                const status = document.getElementById('statusColaborador').value;
                 const colaboradorId = document.getElementById('colaboradorId').value;
 
-                if (!nome || !empresa || !cidade || !departamento) {
+                if (!nome || !empresa || !cidade || !departamento || !status) {
                     showAlert('Preencha todos os campos obrigatórios!', 'error');
                     return;
                 }
@@ -2319,6 +2404,7 @@
                     empresa: empresa,
                     cidade: cidade,
                     departamento: departamento,
+                    status: status,
                     dependentes: [...dependentesEditando],
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUser?.email || "Sistema"
@@ -2365,6 +2451,27 @@
             } catch (erro) {
                 console.error("Erro ao excluir:", erro);
                 showAlert('Erro ao excluir colaborador.', 'error');
+            }
+        }
+
+        async function toggleStatusColaborador(colaboradorId, novoStatus) {
+            try {
+                const db = window.firebaseDb;
+                const { doc, updateDoc } = window.firebaseCollections;
+                
+                const docRef = doc(db, "colaboradores", colaboradorId);
+                await updateDoc(docRef, {
+                    status: novoStatus,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: currentUser?.email || "Sistema"
+                });
+                
+                showAlert(`Colaborador ${novoStatus === 'ativo' ? 'ativado' : 'inativado'} com sucesso!`, 'success');
+                return true;
+            } catch (erro) {
+                console.error("Erro ao alterar status do colaborador:", erro);
+                showAlert('Erro ao alterar status do colaborador.', 'error');
+                return false;
             }
         }
 
@@ -2493,6 +2600,32 @@
                 return true;
             } catch (erro) {
                 console.error("Erro ao salvar retirada:", erro);
+                return false;
+            }
+        }
+
+        async function cancelarRetiradaFirebase(retiradaId, motivo) {
+            try {
+                const db = window.firebaseDb;
+                const { doc, deleteDoc } = window.firebaseCollections;
+                
+                const docRef = doc(db, "retiradas", retiradaId);
+                await deleteDoc(docRef);
+                
+                // Registrar no histórico
+                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
+                historico.push({
+                    data: new Date().toISOString(),
+                    acao: 'Cancelamento de retirada',
+                    retiradaId: retiradaId,
+                    motivo: motivo,
+                    realizadoPor: currentUser?.email || 'Sistema'
+                });
+                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
+                
+                return true;
+            } catch (erro) {
+                console.error("Erro ao cancelar retirada:", erro);
                 return false;
             }
         }
@@ -2685,6 +2818,9 @@
         function filtrarPorEmpresaECidade(colaboradores, empresaSelecionada, cidadeSelecionada) {
             let filtrados = [...colaboradores];
             
+            // Filtrar apenas colaboradores ativos (para retiradas)
+            filtrados = filtrados.filter(c => c.status !== 'inativo');
+            
             if (empresaSelecionada !== 'todas' && empresaSelecionada) {
                 filtrados = filtrados.filter(c => c.empresa === empresaSelecionada);
             }
@@ -2700,9 +2836,18 @@
         function obterColaboradoresFiltrados() {
             const empresaSelecionada = document.getElementById('filtroEmpresaColaboradores').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeColaboradores').value;
+            const statusSelecionado = document.getElementById('filtroStatusColaboradores').value;
             const search = document.getElementById('searchColaborador').value.toLowerCase();
             
             let filtrados = [...colaboradoresLista];
+            
+            // Aplicar filtro de status
+            if (statusSelecionado === 'ativo') {
+                filtrados = filtrados.filter(c => c.status === 'ativo');
+            } else if (statusSelecionado === 'inativo') {
+                filtrados = filtrados.filter(c => c.status === 'inativo');
+            }
+            // Se for 'todos', não filtra por status
             
             // Aplicar filtro de empresa
             if (empresaSelecionada !== 'todas') {
@@ -2734,11 +2879,21 @@
             if (contadorElement && colaboradoresLista.length > 0) {
                 const totalFiltrado = colaboradoresFiltrados.length;
                 const totalGeral = colaboradoresLista.length;
+                const statusSelecionado = document.getElementById('filtroStatusColaboradores').value;
+                
+                let statusText = '';
+                if (statusSelecionado === 'ativo') {
+                    statusText = ' (Ativos)';
+                } else if (statusSelecionado === 'inativo') {
+                    statusText = ' (Inativos)';
+                } else {
+                    statusText = ' (Todos)';
+                }
                 
                 if (totalFiltrado === totalGeral) {
-                    contadorElement.textContent = `Total: ${totalGeral}`;
+                    contadorElement.textContent = `Total: ${totalGeral}${statusText}`;
                 } else {
-                    contadorElement.textContent = `Mostrando ${totalFiltrado} de ${totalGeral}`;
+                    contadorElement.textContent = `Mostrando ${totalFiltrado} de ${totalGeral}${statusText}`;
                 }
             }
         }
@@ -2814,10 +2969,10 @@
             let distribuiçãoHTML = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">';
             
             cidades.forEach(cidade => {
-                const totalColaboradores = colaboradoresLista.filter(c => c.cidade === cidade).length;
+                const totalColaboradores = colaboradoresLista.filter(c => c.cidade === cidade && c.status !== 'inativo').length;
                 const retiradasCidade = retiradasLista.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
-                    return colaborador && colaborador.cidade === cidade;
+                    return colaborador && colaborador.cidade === cidade && colaborador.status !== 'inativo';
                 }).length;
                 const pendentesCidade = totalColaboradores - retiradasCidade;
                 const percentualCidade = totalColaboradores > 0 ? ((retiradasCidade / totalColaboradores) * 100).toFixed(1) : 0;
@@ -3041,7 +3196,7 @@
                 const itemsHTML = colaboradores.map(colaborador => `
                     <div style="display: flex; align-items: center; padding: 16px; border-bottom: 1px solid var(--wsnet-border);">
                         <div style="flex: 2; display: flex; align-items: center;">
-                            <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
+                            <div style="width: 40px; height: 40px; background: ${colaborador.status === 'ativo' ? 'var(--wsnet-bg-light)' : 'rgba(255, 51, 51, 0.1)'}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: ${colaborador.status === 'ativo' ? 'var(--wsnet-primary)' : 'var(--wsnet-danger)'};">
                                 <span class="material-icons">person</span>
                             </div>
                             <div>
@@ -3065,6 +3220,15 @@
                                 ${colaborador.dependentes?.length || 0}
                             </span>
                         </div>
+                        <div style="flex: 1; text-align: center;">
+                            <span style="background: ${colaborador.status === 'ativo' ? 'rgba(0, 204, 102, 0.1)' : 'rgba(255, 51, 51, 0.1)'}; 
+                                     color: ${colaborador.status === 'ativo' ? 'var(--wsnet-success)' : 'var(--wsnet-danger)'}; 
+                                     padding: 4px 12px; border-radius: 12px; font-size: 12px; cursor: pointer;"
+                                  onclick="toggleStatusColaborador('${colaborador.id}', '${colaborador.status === 'ativo' ? 'inativo' : 'ativo'}')"
+                                  title="Clique para ${colaborador.status === 'ativo' ? 'inativar' : 'ativar'}">
+                                ${colaborador.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </div>
                         <div style="flex: 1; display: flex; gap: 8px; justify-content: center;">
                             <button style="width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0, 102, 204, 0.1); color: var(--wsnet-primary); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="editarColaborador('${colaborador.id}')" title="Editar">
                                 <span class="material-icons">edit</span>
@@ -3082,7 +3246,7 @@
                     <div style="text-align: center; padding: 40px;">
                         <span class="material-icons" style="font-size: 48px; color: var(--wsnet-border); opacity: 0.5;">group</span>
                         <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhum colaborador encontrado</h3>
-                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' ? 'Tente mudar os filtros de empresa ou cidade.' : 'Clique em "Novo Colaborador" para começar.'}</p>
+                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' || document.getElementById('filtroStatusColaboradores').value !== 'ativo' ? 'Tente mudar os filtros de empresa, cidade ou status.' : 'Clique em "Novo Colaborador" para começar.'}</p>
                     </div>
                 `;
             }
@@ -3143,6 +3307,7 @@
             carregarEmpresasSelect();
             document.getElementById('empresaColaborador').value = colaborador.empresa || '';
             document.getElementById('cidadeColaborador').value = colaborador.cidade || '';
+            document.getElementById('statusColaborador').value = colaborador.status || 'ativo';
             
             dependentesEditando = [...(colaborador.dependentes || [])];
             modoEdicao = true;
@@ -3414,10 +3579,12 @@
                     mes: mesAtual,
                     mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
                     totalRetiradas: retiradasLista.length,
-                    totalColaboradores: colaboradoresLista.length,
-                    percentual: colaboradoresLista.length > 0 ? ((retiradasLista.length / colaboradoresLista.length) * 100).toFixed(1) : 0,
+                    totalColaboradores: colaboradoresLista.filter(c => c.status !== 'inativo').length,
+                    percentual: colaboradoresLista.filter(c => c.status !== 'inativo').length > 0 ? 
+                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status !== 'inativo').length) * 100).toFixed(1) : 0,
                     dataEncerramento: new Date().toISOString(),
-                    realizadoPor: currentUser?.email || 'Sistema'
+                    realizadoPor: currentUser?.email || 'Sistema',
+                    observacao: 'Mês encerrado - Todos os colaboradores ficaram como PENDENTES para o novo mês'
                 });
                 
                 localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
@@ -3483,7 +3650,8 @@
                 historico.push({
                     data: new Date().toISOString(),
                     acao: 'Limpeza completa de retiradas',
-                    realizadoPor: currentUser?.email || 'Sistema'
+                    realizadoPor: currentUser?.email || 'Sistema',
+                    observacao: 'Todas as retiradas foram apagadas. Colaboradores ficaram como PENDENTES.'
                 });
                 localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
                 
@@ -3510,13 +3678,14 @@
                 const anoSelecionado = document.getElementById('anoRelatorio').value;
                 const empresaSelecionada = document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = document.getElementById('cidadeRelatorio').value;
+                const tipoLista = document.getElementById('tipoListaRelatorio').value;
                 
                 if (!mesSelecionado || !anoSelecionado) {
                     showAlert('Selecione o mês e ano para visualizar o relatório!', 'error');
                     return;
                 }
                 
-                await carregarRelatorio(null, empresaSelecionada, cidadeSelecionada);
+                await carregarRelatorio(null, empresaSelecionada, cidadeSelecionada, tipoLista);
             } catch (erro) {
                 console.error("Erro ao carregar relatório manual:", erro);
                 showAlert('Erro ao carregar relatório. Verifique os filtros e tente novamente.', 'error');
@@ -3548,11 +3717,12 @@
             }
         }
 
-        async function carregarRelatorio(mesParam = null, empresaParam = null, cidadeParam = null) {
+        async function carregarRelatorio(mesParam = null, empresaParam = null, cidadeParam = null, tipoListaParam = null) {
             try {
                 const mesSelecionado = mesParam || `${document.getElementById('anoRelatorio').value}-${document.getElementById('mesRelatorio').value}`;
                 const empresaSelecionada = empresaParam || document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = cidadeParam || document.getElementById('cidadeRelatorio').value;
+                const tipoLista = tipoListaParam || document.getElementById('tipoListaRelatorio').value;
                 
                 if (!mesSelecionado || mesSelecionado === 'undefined-undefined') {
                     showAlert('Selecione um mês e ano válidos!', 'error');
@@ -3567,8 +3737,8 @@
                 // Carregar retiradas do mês selecionado
                 const retiradasMes = await carregarRetiradasPorMes(mesSelecionado);
                 
-                // Filtrar colaboradores
-                let colaboradoresFiltrados = [...colaboradoresLista];
+                // Filtrar colaboradores (apenas ativos para relatórios)
+                let colaboradoresFiltrados = [...colaboradoresLista.filter(c => c.status !== 'inativo')];
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
                 }
@@ -3616,10 +3786,29 @@
                 document.getElementById('relatorioPercentual').textContent = percentual + '%';
                 document.getElementById('relatorioCidade').textContent = cidadeSelecionada === 'todas' ? 'Todas' : cidadeSelecionada;
                 
-                // Atualizar listas
-                atualizarListaRetirados(jaRetiraram, retiradasFiltradas);
-                atualizarListaNaoRetiraram(naoRetiraram);
-                atualizarHistoricoRetiradas(retiradasFiltradas);
+                // Mostrar/ocultar seções baseado no filtro de tipo de lista
+                const cardRetirados = document.getElementById('cardRetirados');
+                const cardNaoRetiraram = document.getElementById('cardNaoRetiraram');
+                
+                if (tipoLista === 'ambas') {
+                    cardRetirados.style.display = 'block';
+                    cardNaoRetiraram.style.display = 'block';
+                } else if (tipoLista === 'retirados') {
+                    cardRetirados.style.display = 'block';
+                    cardNaoRetiraram.style.display = 'none';
+                } else if (tipoLista === 'nao_retirados') {
+                    cardRetirados.style.display = 'none';
+                    cardNaoRetiraram.style.display = 'block';
+                }
+                
+                // Atualizar listas apenas se a seção estiver visível
+                if (tipoLista === 'ambas' || tipoLista === 'retirados') {
+                    atualizarListaRetirados(jaRetiraram, retiradasFiltradas);
+                }
+                
+                if (tipoLista === 'ambas' || tipoLista === 'nao_retirados') {
+                    atualizarListaNaoRetiraram(naoRetiraram);
+                }
                 
                 // Atualizar título
                 const cardTitle = document.querySelector('#relatorios .card-title');
@@ -3653,9 +3842,14 @@
                                     ${colab.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.departamento}</span>` : ''}
                                 </div>
                                 ${retiradaDoColab ? `
-                                    <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-primary); color: var(--wsnet-primary); border-radius: var(--radius-sm); cursor: pointer;" onclick="verDetalhesRetirada('${retiradaDoColab.id}')">
-                                        Ver detalhes
-                                    </button>
+                                    <div>
+                                        <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-primary); color: var(--wsnet-primary); border-radius: var(--radius-sm); cursor: pointer; margin-right: 8px;" onclick="verDetalhesRetirada('${retiradaDoColab.id}')">
+                                            Ver detalhes
+                                        </button>
+                                        <button style="padding: 4px 8px; font-size: 12px; background: rgba(255, 51, 51, 0.1); border: 1px solid var(--wsnet-danger); color: var(--wsnet-danger); border-radius: var(--radius-sm); cursor: pointer;" onclick="abrirModalCancelarRetirada('${retiradaDoColab.id}')">
+                                            Cancelar
+                                        </button>
+                                    </div>
                                 ` : ''}
                             </div>
                             ${retiradaDoColab ? `
@@ -3706,47 +3900,80 @@
             }
         }
 
-        function atualizarHistoricoRetiradas(retiradasFiltradas) {
-            const containerHistorico = document.getElementById('historicoRetiradas');
+        // ==================== CANCELAR RETIRADA ====================
+        function abrirModalCancelarRetirada(retiradaId) {
+            retiradaParaCancelar = retiradaId;
             
-            if (retiradasFiltradas.length > 0) {
-                // Ordenar por data mais recente
-                retiradasFiltradas.sort((a, b) => new Date(b.dataRetirada) - new Date(a.dataRetirada));
-                
-                containerHistorico.innerHTML = retiradasFiltradas.map((retirada, index) => {
-                    const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
-                    return `
-                        <div style="padding: 12px 0; border-bottom: 1px solid var(--wsnet-border);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <span class="material-icons" style="font-size: 16px; color: var(--wsnet-primary); vertical-align: middle; margin-right: 8px;">shopping_cart</span>
-                                    <strong>${retirada.colaboradorTitularNome}</strong>
-                                    ${colaborador ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colaborador.empresa}</span>` : ''}
-                                    ${colaborador ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colaborador.cidade}</span>` : ''}
-                                </div>
-                                <span style="font-size: 12px; color: var(--wsnet-text-medium);">
-                                    ${new Date(retirada.dataRetirada).toLocaleDateString('pt-BR')}
-                                </span>
-                            </div>
-                            <div style="margin-left: 24px; font-size: 13px; color: var(--wsnet-text-medium); margin-top: 8px;">
-                                Retirado por: ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo}) • 
-                                Hora: ${new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
-                                <br>
-                                <small>Registrado por: ${retirada.createdBy || currentUser?.email || 'Sistema'}</small>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                containerHistorico.innerHTML = `
-                    <div style="text-align: center; padding: 20px;">
-                        <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
-                        <p style="color: var(--wsnet-text-light); margin-top: 12px;">
-                            Nenhuma retirada registrada no período.
-                        </p>
-                    </div>
-                `;
+            // Buscar a retirada específica
+            const retirada = retiradasLista.find(r => r.id === retiradaId);
+            const colaborador = retirada ? colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId) : null;
+            
+            if (!retirada) {
+                showAlert('Retirada não encontrada!', 'error');
+                return;
             }
+            
+            const container = document.getElementById('listaRetiradasParaCancelar');
+            container.innerHTML = `
+                <div style="padding: 16px; background: var(--wsnet-bg-light); border-radius: var(--radius-md); margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 12px 0; color: var(--wsnet-primary-dark);">Detalhes da Retirada</h4>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Colaborador:</strong> ${retirada.colaboradorTitularNome}
+                    </div>
+                    ${colaborador ? `
+                        <div style="margin-bottom: 8px;">
+                            <strong>Empresa:</strong> ${colaborador.empresa}
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <strong>Cidade:</strong> ${colaborador.cidade}
+                        </div>
+                    ` : ''}
+                    <div style="margin-bottom: 8px;">
+                        <strong>Retirado por:</strong> ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo})
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Data:</strong> ${new Date(retirada.dataRetirada).toLocaleDateString('pt-BR')} às ${new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <strong>Registrado por:</strong> ${retirada.createdBy || 'Sistema'}
+                    </div>
+                </div>
+                <div class="alert alert-warning" style="display: block;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 8px; color: var(--wsnet-warning);">warning</span>
+                    <strong>Atenção:</strong> Ao cancelar esta retirada, o colaborador ficará como PENDENTE para este mês.
+                </div>
+            `;
+            
+            openModal('modalCancelarRetirada');
+        }
+
+        async function confirmarCancelamentoRetirada() {
+            if (!retiradaParaCancelar) return;
+            
+            const motivo = document.getElementById('motivoCancelamento').value.trim();
+            if (!motivo) {
+                showAlert('Digite o motivo do cancelamento!', 'error');
+                return;
+            }
+            
+            const sucesso = await cancelarRetiradaFirebase(retiradaParaCancelar, motivo);
+            if (sucesso) {
+                showAlert('Retirada cancelada com sucesso! O colaborador agora está como PENDENTE.', 'success');
+                closeModal('modalCancelarRetirada');
+                
+                // Atualizar a interface
+                carregarDashboard();
+                if (document.getElementById('retirada').classList.contains('active')) {
+                    carregarRetirada();
+                }
+                if (document.getElementById('relatorios').classList.contains('active')) {
+                    carregarRelatorioManual();
+                }
+            } else {
+                showAlert('Erro ao cancelar retirada. Tente novamente.', 'error');
+            }
+            
+            retiradaParaCancelar = null;
         }
 
         // ==================== DETALHES DA RETIRADA ====================
@@ -3774,6 +4001,14 @@
                         <div style="margin-bottom: 15px;">
                             <strong>Departamento:</strong><br>
                             ${colaborador.departamento}
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong>Status:</strong><br>
+                            <span style="background: ${colaborador.status === 'ativo' ? 'rgba(0, 204, 102, 0.1)' : 'rgba(255, 51, 51, 0.1)'}; 
+                                     color: ${colaborador.status === 'ativo' ? 'var(--wsnet-success)' : 'var(--wsnet-danger)'}; 
+                                     padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                                ${colaborador.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                            </span>
                         </div>
                     ` : ''}
                     <div style="margin-bottom: 15px;">
@@ -3835,6 +4070,7 @@
                 
                 const empresaFiltro = document.getElementById('filtroEmpresaColaboradores').value;
                 const cidadeFiltro = document.getElementById('filtroCidadeColaboradores').value;
+                const statusFiltro = document.getElementById('filtroStatusColaboradores').value;
                 const buscaFiltro = document.getElementById('searchColaborador').value;
                 
                 doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, currentY);
@@ -3844,6 +4080,7 @@
                 let filtrosInfo = '';
                 if (empresaFiltro !== 'todas') filtrosInfo += `Empresa: ${empresaFiltro} `;
                 if (cidadeFiltro !== 'todas') filtrosInfo += `Cidade: ${cidadeFiltro} `;
+                if (statusFiltro !== 'ativo') filtrosInfo += `Status: ${statusFiltro} `;
                 if (buscaFiltro) filtrosInfo += `Busca: "${buscaFiltro}"`;
                 
                 if (filtrosInfo) {
@@ -3854,7 +4091,7 @@
                 }
                 
                 // Cabeçalho da tabela
-                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Dependentes', 'Data Cadastro']];
+                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Status', 'Dependentes', 'Data Cadastro']];
                 
                 // Dados da tabela
                 const data = colaboradoresFiltrados.map((colab, index) => [
@@ -3863,6 +4100,7 @@
                     colab.empresa || '',
                     colab.cidade || '',
                     colab.departamento || '',
+                    colab.status === 'ativo' ? 'Ativo' : 'Inativo',
                     (colab.dependentes?.length || 0).toString(),
                     colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : 'N/A'
                 ]);
@@ -3881,8 +4119,9 @@
                         2: { cellWidth: 40 }, // Empresa
                         3: { cellWidth: 30 }, // Cidade
                         4: { cellWidth: 40 }, // Departamento
-                        5: { cellWidth: 25 }, // Dependentes
-                        6: { cellWidth: 30 }  // Data
+                        5: { cellWidth: 25 }, // Status
+                        6: { cellWidth: 25 }, // Dependentes
+                        7: { cellWidth: 30 }  // Data
                     }
                 });
                 
@@ -3928,6 +4167,7 @@
                 // Obter informações dos filtros
                 const empresaFiltro = document.getElementById('filtroEmpresaColaboradores').value;
                 const cidadeFiltro = document.getElementById('filtroCidadeColaboradores').value;
+                const statusFiltro = document.getElementById('filtroStatusColaboradores').value;
                 const buscaFiltro = document.getElementById('searchColaborador').value;
                 
                 // Preparar dados
@@ -3941,6 +4181,7 @@
                         'Empresa': colab.empresa || '',
                         'Cidade': colab.cidade || '',
                         'Departamento': colab.departamento || '',
+                        'Status': colab.status === 'ativo' ? 'Ativo' : 'Inativo',
                         'Total Dependentes': dependentes.length,
                         'Dependentes': dependentesStr,
                         'Data Cadastro': colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : '',
@@ -3953,10 +4194,11 @@
                 const ws = XLSX.utils.json_to_sheet(dados);
                 
                 // Adicionar informações de filtro como metadados
-                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || buscaFiltro) {
+                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || statusFiltro !== 'ativo' || buscaFiltro) {
                     const infoFiltros = [];
                     if (empresaFiltro !== 'todas') infoFiltros.push(`Empresa: ${empresaFiltro}`);
                     if (cidadeFiltro !== 'todas') infoFiltros.push(`Cidade: ${cidadeFiltro}`);
+                    if (statusFiltro !== 'ativo') infoFiltros.push(`Status: ${statusFiltro}`);
                     if (buscaFiltro) infoFiltros.push(`Busca: "${buscaFiltro}"`);
                     
                     const infoRow = [
@@ -3977,6 +4219,7 @@
                     { wch: 20 },  // Empresa
                     { wch: 15 },  // Cidade
                     { wch: 20 },  // Departamento
+                    { wch: 10 },  // Status
                     { wch: 15 },  // Total Dependentes
                     { wch: 40 },  // Dependentes
                     { wch: 15 },  // Data Cadastro
@@ -4004,6 +4247,7 @@
                 const anoSelecionado = document.getElementById('anoRelatorio').value;
                 const empresaSelecionada = document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = document.getElementById('cidadeRelatorio').value;
+                const tipoLista = document.getElementById('tipoListaRelatorio').value;
                 
                 if (!mesSelecionado || !anoSelecionado) {
                     showAlert('Selecione o mês e ano para exportar!', 'error');
@@ -4043,6 +4287,8 @@
                 currentY += 7;
                 doc.text(`Cidade: ${cidadeSelecionada === 'todas' ? 'Todas' : cidadeSelecionada}`, marginLeft, currentY);
                 currentY += 7;
+                doc.text(`Filtro: ${getTipoListaDescricao(tipoLista)}`, marginLeft, currentY);
+                currentY += 7;
                 doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, marginLeft, currentY);
                 currentY += 15;
                 
@@ -4067,8 +4313,8 @@
                 // Carregar dados do relatório
                 const retiradasMes = await carregarRetiradasPorMes(mesReferencia);
                 
-                // Filtrar colaboradores
-                let colaboradoresFiltrados = [...colaboradoresLista];
+                // Filtrar colaboradores (apenas ativos para relatórios)
+                let colaboradoresFiltrados = [...colaboradoresLista.filter(c => c.status !== 'inativo')];
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
                 }
@@ -4097,40 +4343,42 @@
                     currentY = marginTop;
                 }
                 
-                // Seção 1: Colaboradores que Já Retiraram
-                doc.setFontSize(14);
-                doc.text('COLABORADORES QUE JÁ RETIRARAM', marginLeft, currentY);
-                currentY += 10;
-                
-                if (jaRetiraram.length > 0) {
-                    doc.setFontSize(10);
-                    let count = 1;
+                // Seção 1: Colaboradores que Já Retiraram (se aplicável)
+                if (tipoLista === 'ambas' || tipoLista === 'retirados') {
+                    doc.setFontSize(14);
+                    doc.text('COLABORADORES QUE JÁ RETIRARAM', marginLeft, currentY);
+                    currentY += 10;
                     
-                    for (const colab of jaRetiraram) {
-                        if (currentY > pageHeight - 20) {
-                            doc.addPage();
-                            currentY = marginTop;
+                    if (jaRetiraram.length > 0) {
+                        doc.setFontSize(10);
+                        let count = 1;
+                        
+                        for (const colab of jaRetiraram) {
+                            if (currentY > pageHeight - 20) {
+                                doc.addPage();
+                                currentY = marginTop;
+                            }
+                            
+                            const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
+                            let linha = `${count}. ${colab.nome}`;
+                            
+                            // Adicionar informações extras se couber
+                            if (retiradaDoColab && currentY < pageHeight - 30) {
+                                linha += ` (Retirado por: ${retiradaDoColab.quemRetirouNome} - ${new Date(retiradaDoColab.dataRetirada).toLocaleDateString('pt-BR')})`;
+                            }
+                            
+                            doc.text(linha, marginLeft, currentY);
+                            currentY += 6;
+                            count++;
                         }
-                        
-                        const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
-                        let linha = `${count}. ${colab.nome}`;
-                        
-                        // Adicionar informações extras se couber
-                        if (retiradaDoColab && currentY < pageHeight - 30) {
-                            linha += ` (Retirado por: ${retiradaDoColab.quemRetirouNome} - ${new Date(retiradaDoColab.dataRetirada).toLocaleDateString('pt-BR')})`;
-                        }
-                        
-                        doc.text(linha, marginLeft, currentY);
-                        currentY += 6;
-                        count++;
+                    } else {
+                        doc.setFontSize(10);
+                        doc.text('Nenhum colaborador retirou neste período.', marginLeft, currentY);
+                        currentY += 10;
                     }
-                } else {
-                    doc.setFontSize(10);
-                    doc.text('Nenhum colaborador retirou neste período.', marginLeft, currentY);
+                    
                     currentY += 10;
                 }
-                
-                currentY += 10;
                 
                 // Verificar se precisa de nova página
                 if (currentY > pageHeight - 50) {
@@ -4138,84 +4386,32 @@
                     currentY = marginTop;
                 }
                 
-                // Seção 2: Colaboradores que Não Retiraram
-                doc.setFontSize(14);
-                doc.text('COLABORADORES QUE NÃO RETIRARAM', marginLeft, currentY);
-                currentY += 10;
-                
-                if (naoRetiraram.length > 0) {
-                    doc.setFontSize(10);
-                    let count = 1;
-                    
-                    for (const colab of naoRetiraram) {
-                        if (currentY > pageHeight - 20) {
-                            doc.addPage();
-                            currentY = marginTop;
-                        }
-                        
-                        doc.text(`${count}. ${colab.nome} - ${colab.empresa || ''} - ${colab.departamento || ''}`, marginLeft, currentY);
-                        currentY += 6;
-                        count++;
-                    }
-                } else {
-                    doc.setFontSize(10);
-                    doc.text('Todos os colaboradores retiraram neste período.', marginLeft, currentY);
+                // Seção 2: Colaboradores que Não Retiraram (se aplicável)
+                if (tipoLista === 'ambas' || tipoLista === 'nao_retirados') {
+                    doc.setFontSize(14);
+                    doc.text('COLABORADORES QUE NÃO RETIRARAM', marginLeft, currentY);
                     currentY += 10;
-                }
-                
-                currentY += 10;
-                
-                // Verificar se precisa de nova página
-                if (currentY > pageHeight - 50) {
-                    doc.addPage();
-                    currentY = marginTop;
-                }
-                
-                // Seção 3: Histórico de Retiradas
-                doc.setFontSize(14);
-                doc.text('HISTÓRICO DE RETIRADAS', marginLeft, currentY);
-                currentY += 10;
-                
-                if (retiradasFiltradas.length > 0) {
-                    // Ordenar por data mais recente
-                    retiradasFiltradas.sort((a, b) => new Date(b.dataRetirada) - new Date(a.dataRetirada));
                     
-                    doc.setFontSize(9);
-                    let count = 1;
-                    
-                    for (const retirada of retiradasFiltradas) {
-                        if (currentY > pageHeight - 20) {
-                            doc.addPage();
-                            currentY = marginTop;
+                    if (naoRetiraram.length > 0) {
+                        doc.setFontSize(10);
+                        let count = 1;
+                        
+                        for (const colab of naoRetiraram) {
+                            if (currentY > pageHeight - 20) {
+                                doc.addPage();
+                                currentY = marginTop;
+                            }
+                            
+                            doc.text(`${count}. ${colab.nome} - ${colab.empresa || ''} - ${colab.departamento || ''}`, marginLeft, currentY);
+                            currentY += 6;
+                            count++;
                         }
-                        
-                        const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
-                        const dataFormatada = new Date(retirada.dataRetirada).toLocaleDateString('pt-BR');
-                        const horaFormatada = new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                        
-                        doc.text(`${count}. ${dataFormatada} ${horaFormatada} - ${retirada.colaboradorTitularNome}`, marginLeft, currentY);
-                        currentY += 5;
-                        doc.text(`   Retirado por: ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo})`, marginLeft + 5, currentY);
-                        currentY += 5;
-                        
-                        if (colaborador) {
-                            doc.text(`   Empresa: ${colaborador.empresa || ''} - Cidade: ${colaborador.cidade || ''}`, marginLeft + 5, currentY);
-                            currentY += 5;
-                        }
-                        
-                        currentY += 3;
-                        count++;
-                        
-                        // Limitar a 30 registros por página para não sobrecarregar
-                        if (count > 30) {
-                            doc.addPage();
-                            currentY = marginTop;
-                            count = 1;
-                        }
+                    } else {
+                        doc.setFontSize(10);
+                        doc.text('Todos os colaboradores retiraram neste período.', marginLeft, currentY);
+                        currentY += 10;
                     }
-                } else {
-                    doc.setFontSize(10);
-                    doc.text('Nenhuma retirada registrada no período.', marginLeft, currentY);
+                    
                     currentY += 10;
                 }
                 
@@ -4245,14 +4441,136 @@
             }
         }
 
+        function getTipoListaDescricao(tipoLista) {
+            switch(tipoLista) {
+                case 'ambas': return 'Ambas as listas';
+                case 'retirados': return 'Apenas Retirados';
+                case 'nao_retirados': return 'Apenas Não Retirados';
+                default: return 'Ambas as listas';
+            }
+        }
+
         async function exportarRelatorioExcel() {
             try {
                 const mesSelecionado = document.getElementById('mesRelatorio').value;
                 const anoSelecionado = document.getElementById('anoRelatorio').value;
                 const empresaSelecionada = document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = document.getElementById('cidadeRelatorio').value;
+                const tipoLista = document.getElementById('tipoListaRelatorio').value;
                 
-                showAlert('Funcionalidade em desenvolvimento!', 'info');
+                if (!mesSelecionado || !anoSelecionado) {
+                    showAlert('Selecione o mês e ano para exportar!', 'error');
+                    return;
+                }
+
+                if (typeof XLSX === 'undefined') {
+                    showAlert('Biblioteca Excel não carregada. Aguarde alguns segundos e tente novamente.', 'error');
+                    return;
+                }
+
+                // Carregar dados do relatório
+                const mesReferencia = `${anoSelecionado}-${mesSelecionado}`;
+                const retiradasMes = await carregarRetiradasPorMes(mesReferencia);
+                
+                // Filtrar colaboradores (apenas ativos para relatórios)
+                let colaboradoresFiltrados = [...colaboradoresLista.filter(c => c.status !== 'inativo')];
+                if (empresaSelecionada !== 'todas') {
+                    colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
+                }
+                if (cidadeSelecionada !== 'todas') {
+                    colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.cidade === cidadeSelecionada);
+                }
+                
+                // Filtrar retiradas pelos mesmos filtros de empresa e cidade
+                let retiradasFiltradas = retiradasMes.filter(r => {
+                    const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
+                    if (!colaborador) return false;
+                    
+                    let empresaOk = empresaSelecionada === 'todas' || colaborador.empresa === empresaSelecionada;
+                    let cidadeOk = cidadeSelecionada === 'todas' || colaborador.cidade === cidadeSelecionada;
+                    
+                    return empresaOk && cidadeOk;
+                });
+                
+                const retiradosIds = [...new Set(retiradasFiltradas.map(r => r.colaboradorTitularId))];
+                const jaRetiraram = colaboradoresFiltrados.filter(c => retiradosIds.includes(c.id));
+                const naoRetiraram = colaboradoresFiltrados.filter(c => !retiradosIds.includes(c.id));
+                
+                // Ordenar
+                jaRetiraram.sort((a, b) => a.nome.localeCompare(b.nome));
+                naoRetiraram.sort((a, b) => a.nome.localeCompare(b.nome));
+                
+                // Criar workbook
+                const wb = XLSX.utils.book_new();
+                
+                // Adicionar estatísticas como primeira planilha
+                const estatisticasData = [
+                    ['RELATÓRIO DE RETIRADA DE CESTAS'],
+                    [''],
+                    [`Período: ${mesSelecionado}/${anoSelecionado}`],
+                    [`Empresa: ${empresaSelecionada === 'todas' ? 'Todas' : empresaSelecionada}`],
+                    [`Cidade: ${cidadeSelecionada === 'todas' ? 'Todas' : cidadeSelecionada}`],
+                    [`Filtro: ${getTipoListaDescricao(tipoLista)}`],
+                    [`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`],
+                    [`Gerado por: ${currentUser?.nome || 'Sistema'}`],
+                    [''],
+                    ['ESTATÍSTICAS'],
+                    [''],
+                    ['Total de Colaboradores:', colaboradoresFiltrados.length],
+                    ['Retiradas Realizadas:', retiradasFiltradas.length],
+                    ['Percentual Retirado:', colaboradoresFiltrados.length > 0 ? 
+                        ((retiradasFiltradas.length / colaboradoresFiltrados.length) * 100).toFixed(1) + '%' : '0%']
+                ];
+                
+                const wsEstatisticas = XLSX.utils.aoa_to_sheet(estatisticasData);
+                XLSX.utils.book_append_sheet(wb, wsEstatisticas, "Estatísticas");
+                
+                // Adicionar planilha de Colaboradores que Já Retiraram (se aplicável)
+                if ((tipoLista === 'ambas' || tipoLista === 'retirados') && jaRetiraram.length > 0) {
+                    const jaRetiraramData = jaRetiraram.map((colab, index) => {
+                        const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
+                        return {
+                            '#': index + 1,
+                            'Nome': colab.nome,
+                            'Empresa': colab.empresa || '',
+                            'Cidade': colab.cidade || '',
+                            'Departamento': colab.departamento || '',
+                            'Quem Retirou': retiradaDoColab ? retiradaDoColab.quemRetirouNome : '',
+                            'Tipo Retirante': retiradaDoColab ? retiradaDoColab.quemRetirouTipo : '',
+                            'Data Retirada': retiradaDoColab ? new Date(retiradaDoColab.dataRetirada).toLocaleString('pt-BR') : '',
+                            'Registrado por': retiradaDoColab ? retiradaDoColab.createdBy || '' : ''
+                        };
+                    });
+                    
+                    const wsJaRetiraram = XLSX.utils.json_to_sheet(jaRetiraramData);
+                    XLSX.utils.book_append_sheet(wb, wsJaRetiraram, "Retirados");
+                }
+                
+                // Adicionar planilha de Colaboradores que Não Retiraram (se aplicável)
+                if ((tipoLista === 'ambas' || tipoLista === 'nao_retirados') && naoRetiraram.length > 0) {
+                    const naoRetiraramData = naoRetiraram.map((colab, index) => ({
+                        '#': index + 1,
+                        'Nome': colab.nome,
+                        'Empresa': colab.empresa || '',
+                        'Cidade': colab.cidade || '',
+                        'Departamento': colab.departamento || '',
+                        'Status': 'Não Retirou'
+                    }));
+                    
+                    const wsNaoRetiraram = XLSX.utils.json_to_sheet(naoRetiraramData);
+                    XLSX.utils.book_append_sheet(wb, wsNaoRetiraram, "Não Retiraram");
+                }
+                
+                // Salvar arquivo
+                const meses = [
+                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                ];
+                const mesFormatado = meses[parseInt(mesSelecionado) - 1];
+                const nomeArquivo = `relatorio_cestas_${mesFormatado}_${anoSelecionado}.xlsx`;
+                
+                XLSX.writeFile(wb, nomeArquivo);
+                showAlert('Relatório exportado em Excel com sucesso!', 'success');
                 
             } catch (erro) {
                 console.error("Erro ao exportar Excel:", erro);
@@ -4378,8 +4696,12 @@
                 const usuarios = db.getUsuarios();
                 console.log(`Total de usuários no sistema: ${usuarios.length}`);
                 
+                // Verificar se usuário já está logado
+                checkLoggedInUser();
+                
             } catch (error) {
                 console.error('Erro ao inicializar banco de dados:', error);
+                showLoginScreen();
             }
             
             const loginForm = document.getElementById('loginForm');
@@ -4411,7 +4733,7 @@
             
             // Fechar modal ao clicar no overlay
             document.addEventListener('click', function(event) {
-                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalNovoMes', 'modalRetirada', 'modalDetalhesRetirada', 'modalLimparRetiradas', 'confirmacaoRetirada'];
+                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalNovoMes', 'modalRetirada', 'modalDetalhesRetirada', 'modalLimparRetiradas', 'confirmacaoRetirada', 'modalCancelarRetirada'];
                 modals.forEach(modalId => {
                     const modal = document.getElementById(modalId);
                     if (modal && modal.style.display === 'block' && event.target === modal) {
