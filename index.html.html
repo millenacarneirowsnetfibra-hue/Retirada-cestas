@@ -2072,9 +2072,6 @@
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('mainApp').style.display = 'none';
             currentUser = null;
-            
-            const db = new LocalDatabase();
-            db.clearLoggedInUser();
         }
 
         function showMainApp() {
@@ -3906,7 +3903,7 @@
             
             // Buscar a retirada específica
             const retirada = retiradasLista.find(r => r.id === retiradaId);
-            const colaborador = retirada ? colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId) : null;
+            const colaborador = retirada ? colaboradoresLista.find(c => c.id === r.colaboradorTitularId) : null;
             
             if (!retirada) {
                 showAlert('Retirada não encontrada!', 'error');
@@ -3979,7 +3976,7 @@
         // ==================== DETALHES DA RETIRADA ====================
         function verDetalhesRetirada(retiradaId) {
             const retirada = retiradasLista.find(r => r.id === retiradaId);
-            const colaborador = retirada ? colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId) : null;
+            const colaborador = retirada ? colaboradoresLista.find(c => c.id === r.colaboradorTitularId) : null;
             
             if (!retirada) return;
 
