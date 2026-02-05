@@ -1681,7 +1681,8 @@
                 <p style="margin-bottom: 20px; color: var(--wsnet-text-medium);">Ao iniciar um novo mês, o sistema irá:</p>
                 <ul style="margin-bottom: 20px; padding-left: 20px; color: var(--wsnet-text-medium);">
                     <li>Salvar todas as retiradas do mês atual no histórico</li>
-                    <li>Zerar as retiradas para o novo mês</li>
+                    <li>NÃO marcar cestas não retiradas como retiradas</li>
+                    <li>Manter todas as retiradas existentes no histórico</li>
                     <li>Manter todos os colaboradores e dependentes</li>
                     <li>Todos os colaboradores ficarão como PENDENTES para o novo mês</li>
                 </ul>
@@ -1712,6 +1713,11 @@
                         </select>
                         <input type="number" class="form-control" style="flex: 1; min-width: 120px;" id="novoAnoSelecionado" placeholder="2025" min="2020" max="2100">
                     </div>
+                </div>
+                
+                <div class="alert alert-warning" style="display: block; margin-top: 20px;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</span>
+                    <strong>Importante:</strong> As cestas não retiradas NÃO serão marcadas como retiradas. Todos os colaboradores ficarão como PENDENTES no novo mês.
                 </div>
             </div>
             <div class="modal-footer">
@@ -3626,7 +3632,7 @@
             
             const db = new LocalDatabase();
             
-            // Salvar histórico das retiradas do mês anterior (apenas estatísticas, não as retiradas em si)
+            // Salvar histórico das retiradas do mês anterior
             if (retiradasLista.length > 0) {
                 const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
                 const [anoAntigo, mesAntigo] = mesAtual.split('-');
@@ -3639,21 +3645,26 @@
                     mes: mesAtual,
                     mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
                     totalRetiradas: retiradasLista.length,
-                    totalColaboradores: colaboradoresLista.length,
-                    percentual: colaboradoresLista.length > 0 ? ((retiradasLista.length / colaboradoresLista.length) * 100).toFixed(1) : 0,
+                    totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo').length,
+                    percentual: colaboradoresLista.filter(c => c.status === 'ativo').length > 0 ? 
+                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo').length) * 100).toFixed(1) : 0,
                     dataEncerramento: new Date().toISOString(),
                     realizadoPor: currentUser?.email || 'Sistema',
-                    nota: 'Retiradas NÃO foram mantidas para o próximo mês - todos ficam como PENDENTES'
+                    nota: 'As cestas não retiradas NÃO foram marcadas como retiradas - todos ficam como PENDENTES no novo mês'
                 });
                 
                 localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
             }
             
-            // Atualizar o mês atual no localStorage
-            db.setMesAtual(novoMesCompleto);
+            // IMPORTANTE: Atualizar o mês atual no localStorage
+            // NÃO marcar cestas não retiradas como retiradas
+            // As retiradas do mês anterior permanecem no Firebase com o mesReferencia antigo
             
-            // NÃO LIMPAR retiradas do Firebase - elas permanecem no histórico
-            // As retiradas do mês anterior permanecem no banco de dados com o mêsReferencia antigo
+            db.setMesAtual(novoMesCompleto);
+            mesAtual = novoMesCompleto; // Atualizar variável global
+            
+            // NÃO LIMPAR retiradas do Firebase - elas permanecem no histórico com o mês antigo
+            // O sistema agora filtrará automaticamente pelo novo mesAtual
             
             const meses = [
                 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -3661,13 +3672,13 @@
             ];
             const mesFormatado = meses[parseInt(novoMes) - 1];
             
-            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico e todos os colaboradores estão como PENDENTES para o novo mês.`, 'success');
+            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico. Todas as cestas não retiradas permanecem como PENDENTES.`, 'success');
             
             closeModal('modalNovoMes');
             
             // Atualizar todas as telas
             // A lista de retiradas será atualizada automaticamente pela escuta do Firebase
-            // pois agora estamos filtrando por mesReferencia = mesAtual
+            // pois agora estamos filtrando por mesReferencia = mesAtual (novo mês)
             
             // Forçar atualização das listas
             if (escutaRetiradasAtiva) {
@@ -3680,6 +3691,11 @@
             carregarDashboard();
             carregarRetirada();
             carregarMesAnoAtual();
+            
+            // Mostrar notificação explicativa
+            setTimeout(() => {
+                showAlert('Lembrete: As cestas não retiradas do mês anterior NÃO foram marcadas como retiradas. Todos os colaboradores estão como PENDENTES para o novo mês.', 'info');
+            }, 1000);
         }
 
         // ==================== LIMPAR RETIRADAS ====================
