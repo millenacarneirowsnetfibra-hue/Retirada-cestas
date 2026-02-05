@@ -1620,7 +1620,7 @@
                     <label class="form-label">Adicionar Novo Departamento:</label>
                     <div style="display: flex; gap: 10px;">
                         <input type="text" class="form-control" id="novoDepartamento" placeholder="Nome do departamento">
-                        <button type="button" class="btn btn-primary" onclick="adicionarDepartamento()">
+                        <button type="button" class="btn btn-primary" onclick="adicionarDepartamentoFirebase()">
                             <span class="material-icons">add</span>
                         </button>
                     </div>
@@ -1829,9 +1829,11 @@
         let colaboradoresLista = [];
         let retiradasLista = [];
         let empresasLista = [];
+        let departamentosLista = [];
         let escutaColaboradoresAtiva = false;
         let escutaRetiradasAtiva = false;
         let escutaEmpresasAtiva = false;
+        let escutaDepartamentosAtiva = false;
         let relatorioAtual = {
             jaRetiraram: [],
             naoRetiraram: [],
@@ -1849,7 +1851,6 @@
                 role: usuario.role,
                 timestamp: new Date().getTime()
             };
-            // Usar sessionStorage em vez de localStorage - será limpo ao fechar o navegador
             sessionStorage.setItem('sessaoUsuario', JSON.stringify(sessao));
         }
 
@@ -1859,12 +1860,10 @@
             
             try {
                 const sessao = JSON.parse(sessaoStr);
-                // Verificar se a sessão tem menos de 12 horas
                 const agora = new Date().getTime();
                 const diferencaHoras = (agora - sessao.timestamp) / (1000 * 60 * 60);
                 
                 if (diferencaHoras > 12) {
-                    // Sessão expirou (mais de 12 horas)
                     sessionStorage.removeItem('sessaoUsuario');
                     return null;
                 }
@@ -1894,13 +1893,6 @@
                         empresaEndereco: 'Rua Exemplo, 123 - Centro',
                         empresaTelefone: '(11) 99999-9999'
                     }));
-                }
-                
-                if (!localStorage.getItem('departamentos')) {
-                    localStorage.setItem('departamentos', JSON.stringify([
-                        'Administração', 'Comercial', 'Financeiro', 'Recursos Humanos',
-                        'Produção', 'Logística', 'TI', 'Manutenção', 'Qualidade', 'Segurança'
-                    ].sort((a, b) => a.localeCompare(b))));
                 }
                 
                 if (!localStorage.getItem('historicoRetiradas')) {
@@ -2017,37 +2009,6 @@
                 }
             }
 
-            getDepartamentos() {
-                try {
-                    const departamentos = JSON.parse(localStorage.getItem('departamentos')) || [];
-                    return departamentos.sort((a, b) => a.localeCompare(b));
-                } catch (error) {
-                    return [];
-                }
-            }
-
-            adicionarDepartamento(novoDepartamento) {
-                const departamentos = this.getDepartamentos();
-                if (novoDepartamento && !departamentos.includes(novoDepartamento.trim())) {
-                    departamentos.push(novoDepartamento.trim());
-                    const departamentosOrdenados = departamentos.sort((a, b) => a.localeCompare(b));
-                    localStorage.setItem('departamentos', JSON.stringify(departamentosOrdenados));
-                    return true;
-                }
-                return false;
-            }
-
-            removerDepartamento(departamento) {
-                let departamentos = this.getDepartamentos();
-                const index = departamentos.indexOf(departamento);
-                if (index !== -1) {
-                    departamentos.splice(index, 1);
-                    localStorage.setItem('departamentos', JSON.stringify(departamentos));
-                    return true;
-                }
-                return false;
-            }
-
             getUsuarios() {
                 try {
                     return JSON.parse(localStorage.getItem('usuarios')) || [];
@@ -2115,6 +2076,7 @@
                     iniciarEscutaColaboradoresEmTempoReal();
                     iniciarEscutaRetiradasEmTempoReal();
                     iniciarEscutaEmpresasEmTempoReal();
+                    iniciarEscutaDepartamentosEmTempoReal();
                 }
             } catch (error) {
                 console.error('Erro ao iniciar escutas Firebase:', error);
@@ -2152,7 +2114,7 @@
                     if (usuario) {
                         currentUser = usuario;
                         
-                        // SALVAR SESSÃO APENAS NA SESSIONSTORAGE (não persiste ao fechar navegador)
+                        // SALVAR SESSÃO APENAS NA SESSIONSTORAGE
                         salvarSessaoUsuario(usuario);
                         
                         // IMPORTANTE: Carregar o mês atual do localStorage
@@ -2207,9 +2169,11 @@
             colaboradoresLista = [];
             retiradasLista = [];
             empresasLista = [];
+            departamentosLista = [];
             escutaColaboradoresAtiva = false;
             escutaRetiradasAtiva = false;
             escutaEmpresasAtiva = false;
+            escutaDepartamentosAtiva = false;
             showLoginScreen();
             showLoginAlert('Você saiu do sistema.', 'success');
         }
@@ -2653,6 +2617,158 @@
             } catch (erro) {
                 console.error("Erro ao limpar retiradas:", erro);
                 return false;
+            }
+        }
+
+        // ==================== FUNÇÕES FIREBASE PARA DEPARTAMENTOS ====================
+        async function carregarDepartamentosDoFirebase() {
+            try {
+                const db = window.firebaseDb;
+                const { collection, getDocs } = window.firebaseCollections;
+                
+                const querySnapshot = await getDocs(collection(db, "departamentos"));
+                const departamentosFirebase = [];
+                
+                querySnapshot.forEach((doc) => {
+                    departamentosFirebase.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                const nomesDepartamentos = departamentosFirebase.map(d => d.nome).sort((a, b) => a.localeCompare(b));
+                
+                departamentosLista = nomesDepartamentos;
+                
+                atualizarDepartamentosNosSelects();
+                
+                if (document.getElementById('modalDepartamentos').style.display === 'block') {
+                    carregarListaDepartamentos();
+                }
+                
+                return departamentosFirebase;
+            } catch (erro) {
+                console.error("Erro ao carregar departamentos do Firebase:", erro);
+                showAlert('Erro ao carregar lista de departamentos. Verifique a conexão.', 'error');
+                return [];
+            }
+        }
+
+        async function adicionarDepartamentoFirebase() {
+            const input = document.getElementById('novoDepartamento');
+            const novoDepartamento = input.value.trim();
+            
+            if (!novoDepartamento) {
+                showAlert('Digite o nome do departamento!', 'error');
+                return;
+            }
+
+            try {
+                const db = window.firebaseDb;
+                const { collection, addDoc } = window.firebaseCollections;
+                
+                if (departamentosLista.includes(novoDepartamento)) {
+                    showAlert('Este departamento já existe!', 'error');
+                    return;
+                }
+                
+                const departamentoData = {
+                    nome: novoDepartamento,
+                    createdAt: new Date().toISOString(),
+                    createdBy: currentUser?.email || "Sistema"
+                };
+                
+                await addDoc(collection(db, "departamentos"), departamentoData);
+                showAlert(`Departamento "${novoDepartamento}" adicionado com sucesso!`, 'success');
+                input.value = '';
+                
+            } catch (erro) {
+                console.error("Erro ao adicionar departamento no Firebase:", erro);
+                showAlert('Erro ao adicionar departamento. Tente novamente.', 'error');
+            }
+        }
+
+        async function removerDepartamentoFirebase(departamentoNome) {
+            if (!confirm(`Tem certeza que deseja remover o departamento "${departamentoNome}"?\n\nEsta ação não afetará os colaboradores já cadastrados, mas novos colaboradores não poderão selecionar este departamento.`)) {
+                return;
+            }
+
+            try {
+                const db = window.firebaseDb;
+                const { collection, getDocs, query, where, deleteDoc, doc } = window.firebaseCollections;
+                
+                const departamentosRef = collection(db, "departamentos");
+                const q = query(departamentosRef, where("nome", "==", departamentoNome));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const deletePromises = [];
+                    querySnapshot.forEach((document) => {
+                        deletePromises.push(deleteDoc(doc(db, "departamentos", document.id)));
+                    });
+                    
+                    await Promise.all(deletePromises);
+                    showAlert(`Departamento "${departamentoNome}" removida com sucesso!`, 'success');
+                } else {
+                    showAlert('Departamento não encontrado no banco de dados.', 'error');
+                }
+                
+            } catch (erro) {
+                console.error("Erro ao remover departamento do Firebase:", erro);
+                showAlert('Erro ao remover departamento. Tente novamente.', 'error');
+            }
+        }
+
+        function iniciarEscutaDepartamentosEmTempoReal() {
+            if (escutaDepartamentosAtiva) return;
+            
+            try {
+                const db = window.firebaseDb;
+                const { collection, onSnapshot } = window.firebaseCollections;
+                
+                const departamentosCollection = collection(db, "departamentos");
+                
+                onSnapshot(departamentosCollection, (querySnapshot) => {
+                    const departamentosFirebase = [];
+                    querySnapshot.forEach((doc) => {
+                        departamentosFirebase.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    const nomesDepartamentos = departamentosFirebase.map(d => d.nome).sort((a, b) => a.localeCompare(b));
+                    
+                    departamentosLista = nomesDepartamentos;
+                    
+                    atualizarDepartamentosNosSelects();
+                    
+                    if (document.getElementById('modalDepartamentos').style.display === 'block') {
+                        carregarListaDepartamentos();
+                    }
+                    
+                    escutaDepartamentosAtiva = true;
+                }, (erro) => {
+                    console.error("Erro na escuta de departamentos:", erro);
+                    escutaDepartamentosAtiva = false;
+                });
+                
+            } catch (erro) {
+                console.error("Erro ao iniciar escuta de departamentos:", erro);
+            }
+        }
+
+        function atualizarDepartamentosNosSelects() {
+            if (departamentosLista.length === 0) return;
+            
+            // Atualizar o select no modal de colaborador
+            const deptoSelect = document.getElementById('departamentoColaborador');
+            if (deptoSelect) {
+                let options = '<option value="">Selecione o departamento...</option>';
+                departamentosLista.forEach(depto => {
+                    options += `<option value="${depto}">${depto}</option>`;
+                });
+                deptoSelect.innerHTML = options;
             }
         }
 
@@ -3271,16 +3387,7 @@
             document.getElementById('btnSalvarColaborador').innerHTML = '<span class="material-icons">save</span> Salvar';
             document.getElementById('colaboradorId').value = '';
             
-            const db = new LocalDatabase();
-            const departamentos = db.getDepartamentos();
-            
-            const deptoSelect = document.getElementById('departamentoColaborador');
-            let options = '<option value="">Selecione o departamento...</option>';
-            departamentos.forEach(depto => {
-                options += `<option value="${depto}">${depto}</option>`;
-            });
-            deptoSelect.innerHTML = options;
-            
+            atualizarDepartamentosNosSelects();
             carregarEmpresasSelect();
             
             // Definir status padrão como "ativo"
@@ -3303,15 +3410,7 @@
             document.getElementById('colaboradorId').value = colaborador.id;
             document.getElementById('nomeColaborador').value = colaborador.nome || '';
             
-            const db = new LocalDatabase();
-            const departamentos = db.getDepartamentos();
-            
-            const deptoSelect = document.getElementById('departamentoColaborador');
-            let options = '<option value="">Selecione o departamento...</option>';
-            departamentos.forEach(depto => {
-                options += `<option value="${depto}">${depto}</option>`;
-            });
-            deptoSelect.innerHTML = options;
+            atualizarDepartamentosNosSelects();
             document.getElementById('departamentoColaborador').value = colaborador.departamento || '';
             
             carregarEmpresasSelect();
@@ -3441,16 +3540,14 @@
             openModal('modalDepartamentos');
         }
 
-        function carregarListaDepartamentos() {
-            const db = new LocalDatabase();
-            const departamentos = db.getDepartamentos();
+        async function carregarListaDepartamentos() {
             const container = document.getElementById('listaDepartamentos');
             
-            if (departamentos.length > 0) {
-                container.innerHTML = departamentos.map(depto => `
+            if (departamentosLista.length > 0) {
+                container.innerHTML = departamentosLista.map(depto => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--wsnet-bg-light); border-radius: var(--radius-md); border: 1px solid var(--wsnet-border);">
                         <span style="color: var(--wsnet-text-dark);">${depto}</span>
-                        <button style="padding: 4px 8px; font-size: 12px; background: var(--wsnet-danger); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;" onclick="removerDepartamento('${depto}')">
+                        <button style="padding: 4px 8px; font-size: 12px; background: var(--wsnet-danger); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;" onclick="removerDepartamentoFirebase('${depto}')">
                             <span class="material-icons" style="font-size: 16px;">delete</span>
                         </button>
                     </div>
@@ -3461,53 +3558,6 @@
                         Nenhum departamento cadastrado.
                     </p>
                 `;
-            }
-        }
-
-        function adicionarDepartamento() {
-            const input = document.getElementById('novoDepartamento');
-            const novoDepartamento = input.value.trim();
-            
-            if (!novoDepartamento) {
-                showAlert('Digite o nome do departamento!', 'error');
-                return;
-            }
-
-            const db = new LocalDatabase();
-            if (db.adicionarDepartamento(novoDepartamento)) {
-                showAlert(`Departamento "${novoDepartamento}" adicionado com sucesso!`);
-                input.value = '';
-                carregarListaDepartamentos();
-                atualizarDepartamentosEmTodosLocais();
-            } else {
-                showAlert('Este departamento já existe!', 'error');
-            }
-        }
-
-        function removerDepartamento(departamento) {
-            if (!confirm(`Tem certeza que deseja remover o departamento "${departamento}"?\n\nEsta ação não afetará os colaboradores já cadastrados, mas novos colaboradores não poderão selecionar este departamento.`)) {
-                return;
-            }
-
-            const db = new LocalDatabase();
-            if (db.removerDepartamento(departamento)) {
-                showAlert(`Departamento "${departamento}" removido com sucesso!`);
-                carregarListaDepartamentos();
-                atualizarDepartamentosEmTodosLocais();
-            }
-        }
-
-        function atualizarDepartamentosEmTodosLocais() {
-            const db = new LocalDatabase();
-            const departamentos = db.getDepartamentos();
-            
-            if (document.getElementById('modalColaborador').style.display === 'block') {
-                const deptoSelect = document.getElementById('departamentoColaborador');
-                let options = '<option value="">Selecione o departamento...</option>';
-                departamentos.forEach(depto => {
-                    options += `<option value="${depto}">${depto}</option>`;
-                });
-                deptoSelect.innerHTML = options;
             }
         }
 
@@ -4747,6 +4797,7 @@
                                     iniciarEscutaColaboradoresEmTempoReal();
                                     iniciarEscutaRetiradasEmTempoReal();
                                     iniciarEscutaEmpresasEmTempoReal();
+                                    iniciarEscutaDepartamentosEmTempoReal();
                                 }
                             } catch (error) {
                                 console.error('Erro ao iniciar escutas Firebase:', error);
@@ -4809,6 +4860,7 @@
             colaboradoresLista = [];
             retiradasLista = [];
             empresasLista = [];
+            departamentosLista = [];
             
             console.log('=== SISTEMA PRONTO PARA USO ===');
         });
