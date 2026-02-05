@@ -2417,12 +2417,41 @@
                     const docRef = doc(db, "colaboradores", colaboradorId);
                     await updateDoc(docRef, colaboradorData);
                     showAlert('Colaborador atualizado com sucesso!', 'success');
+                    
+                    // Atualizar automaticamente todas as abas após salvar
+                    setTimeout(() => {
+                        if (document.getElementById('dashboard').classList.contains('active')) {
+                            carregarDashboard();
+                        }
+                        if (document.getElementById('retirada').classList.contains('active')) {
+                            carregarRetirada();
+                        }
+                        if (document.getElementById('colaboradores').classList.contains('active')) {
+                            carregarColaboradores();
+                        }
+                        if (document.getElementById('relatorios').classList.contains('active')) {
+                            carregarRelatorio();
+                        }
+                    }, 100);
                 } else {
                     // Novo colaborador
                     colaboradorData.createdAt = new Date().toISOString();
                     colaboradorData.createdBy = currentUser?.email || "Sistema";
                     await addDoc(collection(db, "colaboradores"), colaboradorData);
                     showAlert('Colaborador cadastrado com sucesso!', 'success');
+                    
+                    // Atualizar automaticamente todas as abas após salvar
+                    setTimeout(() => {
+                        if (document.getElementById('dashboard').classList.contains('active')) {
+                            carregarDashboard();
+                        }
+                        if (document.getElementById('retirada').classList.contains('active')) {
+                            carregarRetirada();
+                        }
+                        if (document.getElementById('colaboradores').classList.contains('active')) {
+                            carregarColaboradores();
+                        }
+                    }, 100);
                 }
 
                 closeModal("modalColaborador");
@@ -2447,6 +2476,22 @@
                 const docRef = doc(db, "colaboradores", colaboradorId);
                 await deleteDoc(docRef);
                 showAlert('Colaborador excluído com sucesso!', 'success');
+                
+                // Atualizar automaticamente todas as abas após excluir
+                setTimeout(() => {
+                    if (document.getElementById('dashboard').classList.contains('active')) {
+                        carregarDashboard();
+                    }
+                    if (document.getElementById('retirada').classList.contains('active')) {
+                        carregarRetirada();
+                    }
+                    if (document.getElementById('colaboradores').classList.contains('active')) {
+                        carregarColaboradores();
+                    }
+                    if (document.getElementById('relatorios').classList.contains('active')) {
+                        carregarRelatorio();
+                    }
+                }, 100);
             } catch (erro) {
                 console.error("Erro ao excluir:", erro);
                 showAlert('Erro ao excluir colaborador.', 'error');
@@ -2478,15 +2523,19 @@
                     atualizarFiltrosEmpresa();
                     atualizarDistribuicaoCidade();
                     
-                    if (document.getElementById('colaboradores').classList.contains('active')) {
-                        carregarColaboradores();
+                    // Verificar qual aba está ativa e atualizar automaticamente
+                    if (document.getElementById('dashboard').classList.contains('active')) {
+                        carregarDashboard();
                     }
-                    
                     if (document.getElementById('retirada').classList.contains('active')) {
                         carregarRetirada();
                     }
-                    
-                    carregarDashboard();
+                    if (document.getElementById('colaboradores').classList.contains('active')) {
+                        carregarColaboradores();
+                    }
+                    if (document.getElementById('relatorios').classList.contains('active')) {
+                        carregarRelatorio();
+                    }
                     
                     escutaColaboradoresAtiva = true;
                 }, (erro) => {
@@ -2552,11 +2601,16 @@
                     
                     retiradasLista = retiradasMes;
                     
+                    // Verificar qual aba está ativa e atualizar automaticamente
+                    if (document.getElementById('dashboard').classList.contains('active')) {
+                        carregarDashboard();
+                    }
                     if (document.getElementById('retirada').classList.contains('active')) {
                         carregarRetirada();
                     }
-                    
-                    carregarDashboard();
+                    if (document.getElementById('relatorios').classList.contains('active')) {
+                        carregarRelatorio();
+                    }
                     
                     escutaRetiradasAtiva = true;
                 }, (erro) => {
