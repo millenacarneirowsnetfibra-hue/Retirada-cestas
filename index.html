@@ -461,6 +461,17 @@
             color: white;
         }
 
+        .btn-correcao {
+            background: rgba(255, 193, 7, 0.1);
+            color: #FF9800;
+            border: 1px solid #FF9800;
+        }
+
+        .btn-correcao:hover {
+            background: #FF9800;
+            color: white;
+        }
+
         /* Forms */
         .form-group {
             margin-bottom: 20px;
@@ -826,6 +837,7 @@
             
             .filter-group {
                 min-width: 100%;
+                margin-bottom: 10px;
             }
             
             .stat-value {
@@ -932,6 +944,11 @@
                 font-size: 16px;
                 min-height: 44px;
             }
+        }
+
+        /* Estilos para filtro de status */
+        .filter-group select option {
+            padding: 8px;
         }
     </style>
 </head>
@@ -1355,6 +1372,14 @@
                                     <option value="Peruíbe">Peruíbe</option>
                                 </select>
                             </div>
+                            <div class="filter-group">
+                                <label class="form-label">Filtrar por Status:</label>
+                                <select class="form-control" id="statusRelatorio" onchange="filtrarRelatorioPorStatus()">
+                                    <option value="todos">Todos os Status</option>
+                                    <option value="retirados">Apenas Retirados</option>
+                                    <option value="pendentes">Apenas Pendentes</option>
+                                </select>
+                            </div>
                             <div class="filter-group" style="align-self: flex-end;">
                                 <button type="button" class="btn btn-primary" onclick="carregarRelatorioManual()" id="btnGerarRelatorio">
                                     <span class="material-icons">search</span>
@@ -1416,6 +1441,7 @@
                                     <h3 class="card-title">
                                         <span class="material-icons">check_circle</span>
                                         Colaboradores que Já Retiraram
+                                        <span id="contadorRetirados" style="font-size: 14px; color: var(--wsnet-text-medium); margin-left: 12px;"></span>
                                     </h3>
                                 </div>
                                 <div id="listaRetirados" style="padding: 16px;">
@@ -1433,26 +1459,10 @@
                                     <h3 class="card-title">
                                         <span class="material-icons">pending_actions</span>
                                         Colaboradores que Não Retiraram
+                                        <span id="contadorPendentes" style="font-size: 14px; color: var(--wsnet-text-medium); margin-left: 12px;"></span>
                                     </h3>
                                 </div>
                                 <div id="listaNaoRetiraram" style="padding: 16px;">
-                                    <div style="text-align: center; padding: 20px;">
-                                        <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
-                                        <p style="color: var(--wsnet-text-light); margin-top: 12px;">
-                                            Selecione os filtros e clique em "Gerar Relatório"
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <span class="material-icons">history</span>
-                                        Histórico de Retiradas do Mês
-                                    </h3>
-                                </div>
-                                <div id="historicoRetiradas" style="padding: 16px;">
                                     <div style="text-align: center; padding: 20px;">
                                         <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
                                         <p style="color: var(--wsnet-text-light); margin-top: 12px;">
@@ -1796,9 +1806,52 @@
         let escutaColaboradoresAtiva = false;
         let escutaRetiradasAtiva = false;
         let escutaEmpresasAtiva = false;
+        let relatorioAtual = {
+            jaRetiraram: [],
+            naoRetiraram: [],
+            retiradas: []
+        };
         
         // IMPORTANTE: Agora o mês atual é carregado do localStorage sempre que o sistema inicia
         let mesAtual = null; // Será carregado após login
+
+        // ==================== GERENCIAMENTO DE SESSÃO ====================
+        function salvarSessaoUsuario(usuario) {
+            const sessao = {
+                email: usuario.email,
+                nome: usuario.nome,
+                role: usuario.role,
+                timestamp: new Date().getTime()
+            };
+            localStorage.setItem('sessaoUsuario', JSON.stringify(sessao));
+        }
+
+        function recuperarSessaoUsuario() {
+            const sessaoStr = localStorage.getItem('sessaoUsuario');
+            if (!sessaoStr) return null;
+            
+            try {
+                const sessao = JSON.parse(sessaoStr);
+                // Verificar se a sessão tem menos de 24 horas
+                const agora = new Date().getTime();
+                const diferencaHoras = (agora - sessao.timestamp) / (1000 * 60 * 60);
+                
+                if (diferencaHoras > 24) {
+                    // Sessão expirou (mais de 24 horas)
+                    localStorage.removeItem('sessaoUsuario');
+                    return null;
+                }
+                
+                return sessao;
+            } catch (error) {
+                localStorage.removeItem('sessaoUsuario');
+                return null;
+            }
+        }
+
+        function limparSessaoUsuario() {
+            localStorage.removeItem('sessaoUsuario');
+        }
 
         // ==================== BANCO DE DADOS LOCAL ====================
         class LocalDatabase {
@@ -2072,6 +2125,9 @@
                     if (usuario) {
                         currentUser = usuario;
                         
+                        // SALVAR SESSÃO
+                        salvarSessaoUsuario(usuario);
+                        
                         // IMPORTANTE: Carregar o mês atual do localStorage
                         mesAtual = db.getMesAtual();
                         console.log('Mês atual carregado do localStorage:', mesAtual);
@@ -2119,6 +2175,7 @@
         }
 
         function logout() {
+            limparSessaoUsuario();
             currentUser = null;
             colaboradoresLista = [];
             retiradasLista = [];
@@ -2998,7 +3055,13 @@
         }
 
         async function confirmarRetirada() {
-            if (!retiradaPendente || !colaboradorSelecionado) return;
+            if (!retiradaPendente) return;
+            
+            // Verificar se é uma correção
+            if (retiradaPendente.correcao) {
+                await confirmarCorrecaoRetirada();
+                return;
+            }
 
             const { quemRetirouId, quemRetirouNome, quemRetirouTipo } = retiradaPendente;
             
@@ -3401,7 +3464,7 @@
             
             const db = new LocalDatabase();
             
-            // Salvar histórico das retiradas do mês anterior
+            // Salvar histórico das retiradas do mês anterior (apenas estatísticas, não as retiradas em si)
             if (retiradasLista.length > 0) {
                 const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
                 const [anoAntigo, mesAntigo] = mesAtual.split('-');
@@ -3417,7 +3480,8 @@
                     totalColaboradores: colaboradoresLista.length,
                     percentual: colaboradoresLista.length > 0 ? ((retiradasLista.length / colaboradoresLista.length) * 100).toFixed(1) : 0,
                     dataEncerramento: new Date().toISOString(),
-                    realizadoPor: currentUser?.email || 'Sistema'
+                    realizadoPor: currentUser?.email || 'Sistema',
+                    nota: 'Retiradas NÃO foram mantidas para o próximo mês - todos ficam como PENDENTES'
                 });
                 
                 localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
@@ -3426,15 +3490,8 @@
             // Atualizar o mês atual no localStorage
             db.setMesAtual(novoMesCompleto);
             
-            // Limpar a lista local de retiradas
-            retiradasLista = [];
-            
-            // Limpar retiradas do Firebase
-            try {
-                await limparTodasRetiradasFirebase();
-            } catch (error) {
-                console.error('Erro ao limpar retiradas do Firebase:', error);
-            }
+            // NÃO LIMPAR retiradas do Firebase - elas permanecem no histórico
+            // As retiradas do mês anterior permanecem no banco de dados com o mêsReferencia antigo
             
             const meses = [
                 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -3442,11 +3499,22 @@
             ];
             const mesFormatado = meses[parseInt(novoMes) - 1];
             
-            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! Todos os colaboradores estão como PENDENTES para o novo mês.`, 'success');
+            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico e todos os colaboradores estão como PENDENTES para o novo mês.`, 'success');
             
             closeModal('modalNovoMes');
             
             // Atualizar todas as telas
+            // A lista de retiradas será atualizada automaticamente pela escuta do Firebase
+            // pois agora estamos filtrando por mesReferencia = mesAtual
+            
+            // Forçar atualização das listas
+            if (escutaRetiradasAtiva) {
+                // A escuta já vai atualizar automaticamente
+            } else {
+                // Recarregar retiradas manualmente
+                await carregarRetiradasDoFirebase();
+            }
+            
             carregarDashboard();
             carregarRetirada();
             carregarMesAnoAtual();
@@ -3497,6 +3565,199 @@
             closeModal('modalLimparRetiradas');
         }
 
+        // ==================== CORREÇÃO DE RETIRADAS ====================
+        async function abrirModalCorrecaoRetirada(colaboradorId) {
+            const colaborador = colaboradoresLista.find(c => c.id === colaboradorId);
+            if (!colaborador) return;
+            
+            // Buscar retirada existente para este colaborador no mês atual
+            const retiradaExistente = retiradasLista.find(r => 
+                r.colaboradorTitularId === colaboradorId && 
+                r.mesReferencia === mesAtual
+            );
+            
+            if (!retiradaExistente) {
+                showAlert('Este colaborador não possui retirada registrada para correção.', 'warning');
+                return;
+            }
+            
+            // Criar modal de correção
+            const modalHTML = `
+                <div id="modalCorrecaoRetirada" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Corrigir Retirada</h3>
+                            <span class="material-icons" style="cursor: pointer;" onclick="closeModal('modalCorrecaoRetirada')">close</span>
+                        </div>
+                        <div class="modal-body">
+                            <p style="margin-bottom: 20px; color: var(--wsnet-text-medium);">
+                                Corrigindo retirada para: <strong>${colaborador.nome}</strong>
+                            </p>
+                            
+                            <div style="background: rgba(255, 153, 0, 0.1); padding: 15px; border-radius: var(--radius-md); margin-bottom: 20px;">
+                                <h4 style="margin: 0 0 10px 0; color: var(--wsnet-warning); font-size: 14px;">
+                                    <span class="material-icons" style="vertical-align: middle;">history</span>
+                                    Registro Atual
+                                </h4>
+                                <p style="margin: 5px 0; color: var(--wsnet-text-medium);">
+                                    <strong>Retirado por:</strong> ${retiradaExistente.quemRetirouNome} (${retiradaExistente.quemRetirouTipo})
+                                </p>
+                                <p style="margin: 5px 0; color: var(--wsnet-text-medium);">
+                                    <strong>Data:</strong> ${new Date(retiradaExistente.dataRetirada).toLocaleDateString('pt-BR')}
+                                </p>
+                                <p style="margin: 5px 0; color: var(--wsnet-text-medium);">
+                                    <strong>Hora:</strong> ${new Date(retiradaExistente.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                                </p>
+                            </div>
+                            
+                            <h4 style="margin: 0 0 16px 0; color: var(--wsnet-primary-dark); font-size: 14px;">Selecione quem está retirando:</h4>
+                            <div id="listaAutorizadosCorrecao"></div>
+                            
+                            <div class="form-group" style="margin-top: 20px;">
+                                <label class="form-label">Observação da Correção (opcional):</label>
+                                <textarea class="form-control" id="observacaoCorrecao" placeholder="Motivo da correção..." rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline" onclick="closeModal('modalCorrecaoRetirada')">Cancelar</button>
+                            <button type="button" class="btn btn-danger" onclick="excluirRetiradaExistente('${retiradaExistente.id}')">
+                                <span class="material-icons">delete</span>
+                                Excluir Registro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Adicionar modal ao body
+            if (!document.getElementById('modalCorrecaoRetirada')) {
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+            }
+            
+            // Listar autorizados
+            const autorizados = [
+                {
+                    id: colaborador.id,
+                    nome: colaborador.nome,
+                    tipo: 'Colaborador'
+                },
+                ...(colaborador.dependentes || []).map(dep => ({
+                    id: dep.id,
+                    nome: dep.nome,
+                    tipo: 'Dependente',
+                    parentesco: dep.parentesco
+                }))
+            ];
+
+            const container = document.getElementById('listaAutorizadosCorrecao');
+            container.innerHTML = autorizados.map(autorizado => `
+                <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border); cursor: pointer;" onclick="solicitarConfirmacaoCorrecao('${colaborador.id}', '${colaborador.nome}', '${autorizado.id}', '${autorizado.nome}', '${autorizado.tipo}', '${autorizado.parentesco || ''}', '${retiradaExistente.id}')">
+                    <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
+                        <span class="material-icons">${autorizado.tipo === 'Colaborador' ? 'person' : 'family_restroom'}</span>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500; color: var(--wsnet-text-dark); margin-bottom: 4px;">${autorizado.nome}</div>
+                        <div style="font-size: 13px; color: var(--wsnet-text-medium);">
+                            ${autorizado.tipo === 'Colaborador' ? 'Titular' : `Dependente - ${autorizado.parentesco}`}
+                        </div>
+                    </div>
+                    <span class="material-icons" style="color: var(--wsnet-text-light);">chevron_right</span>
+                </div>
+            `).join('');
+
+            openModal('modalCorrecaoRetirada');
+        }
+
+        async function excluirRetiradaExistente(retiradaId) {
+            if (!confirm('Tem certeza que deseja excluir este registro de retirada?\n\nO colaborador ficará como PENDENTE novamente.')) {
+                return;
+            }
+
+            try {
+                const db = window.firebaseDb;
+                const { doc, deleteDoc } = window.firebaseCollections;
+                
+                const docRef = doc(db, "retiradas", retiradaId);
+                await deleteDoc(docRef);
+                
+                showAlert('Registro de retirada excluído! O colaborador agora está como PENDENTE.', 'success');
+                closeModal('modalCorrecaoRetirada');
+                
+            } catch (erro) {
+                console.error("Erro ao excluir retirada:", erro);
+                showAlert('Erro ao excluir registro. Tente novamente.', 'error');
+            }
+        }
+
+        function solicitarConfirmacaoCorrecao(colaboradorId, colaboradorNome, quemRetirouId, quemRetirouNome, quemRetirouTipo, parentesco, retiradaExistenteId) {
+            retiradaPendente = {
+                colaboradorId,
+                colaboradorNome,
+                quemRetirouId,
+                quemRetirouNome,
+                quemRetirouTipo,
+                parentesco,
+                retiradaExistenteId,
+                correcao: true
+            };
+
+            const mensagem = `Deseja corrigir a retirada de cesta de <strong>"${colaboradorNome}"</strong>?<br><br>
+                             O registro atual será substituído por:<br>
+                             <strong>Retirante:</strong> ${quemRetirouNome} (${quemRetirouTipo})`;
+            
+            document.getElementById('confirmacaoMensagem').innerHTML = mensagem;
+            document.getElementById('confirmacaoTitulo').textContent = 'Confirmar Correção';
+            
+            closeModal('modalCorrecaoRetirada');
+            openModal('confirmacaoRetirada');
+        }
+
+        async function confirmarCorrecaoRetirada() {
+            if (!retiradaPendente || !retiradaPendente.correcao) return;
+
+            const { colaboradorId, colaboradorNome, quemRetirouId, quemRetirouNome, quemRetirouTipo, retiradaExistenteId } = retiradaPendente;
+            const observacao = document.getElementById('observacaoCorrecao')?.value || '';
+            
+            try {
+                const db = window.firebaseDb;
+                const { doc, deleteDoc } = window.firebaseCollections;
+                
+                // 1. Excluir o registro antigo
+                const docRefAntigo = doc(db, "retiradas", retiradaExistenteId);
+                await deleteDoc(docRefAntigo);
+                
+                // 2. Criar novo registro
+                const novaRetirada = {
+                    colaboradorTitularId: colaboradorId,
+                    colaboradorTitularNome: colaboradorNome,
+                    quemRetirouId: quemRetirouId,
+                    quemRetirouNome: quemRetirouNome,
+                    quemRetirouTipo: quemRetirouTipo,
+                    dataRetirada: new Date().toISOString(),
+                    mesReferencia: mesAtual,
+                    confirmadoPor: currentUser?.nome || currentUser?.email || 'Registrador',
+                    createdBy: currentUser?.email || 'Registrador',
+                    correcao: true,
+                    observacaoCorrecao: observacao,
+                    correcaoRealizadaPor: currentUser?.email || 'Sistema',
+                    dataCorrecao: new Date().toISOString()
+                };
+                
+                // 3. Salvar novo registro
+                const { collection, addDoc } = window.firebaseCollections;
+                await addDoc(collection(db, "retiradas"), novaRetirada);
+                
+                showAlert(`Correção realizada! Retirada atualizada para ${colaboradorNome}.`, 'success');
+                
+            } catch (erro) {
+                console.error("Erro ao corrigir retirada:", erro);
+                showAlert('Erro ao realizar correção. Tente novamente.', 'error');
+            }
+            
+            closeModal('confirmacaoRetirada');
+            retiradaPendente = null;
+        }
+
         // ==================== RELATÓRIOS ====================
         function carregarMesAnoAtual() {
             const [ano, mes] = mesAtual.split('-').map(Number);
@@ -3545,6 +3806,30 @@
             } catch (erro) {
                 console.error("Erro ao carregar retiradas do mês:", erro);
                 return [];
+            }
+        }
+
+        // ==================== FILTRAR RELATÓRIO POR STATUS ====================
+        function filtrarRelatorioPorStatus() {
+            const statusSelecionado = document.getElementById('statusRelatorio').value;
+            
+            // Mostrar/esconder seções baseadas no filtro
+            const secoes = {
+                listaRetirados: statusSelecionado === 'pendentes' ? 'none' : 'block',
+                listaNaoRetiraram: statusSelecionado === 'retirados' ? 'none' : 'block'
+            };
+            
+            document.getElementById('listaRetirados').parentElement.style.display = secoes.listaRetirados;
+            document.getElementById('listaNaoRetiraram').parentElement.style.display = secoes.listaNaoRetiraram;
+            
+            // Atualizar contadores
+            if (statusSelecionado === 'todos') {
+                document.getElementById('contadorRetirados').textContent = `(${relatorioAtual.jaRetiraram.length})`;
+                document.getElementById('contadorPendentes').textContent = `(${relatorioAtual.naoRetiraram.length})`;
+            } else if (statusSelecionado === 'retirados') {
+                document.getElementById('contadorRetirados').textContent = `(${relatorioAtual.jaRetiraram.length})`;
+            } else if (statusSelecionado === 'pendentes') {
+                document.getElementById('contadorPendentes').textContent = `(${relatorioAtual.naoRetiraram.length})`;
             }
         }
 
@@ -3602,6 +3887,13 @@
                 jaRetiraram.sort((a, b) => a.nome.localeCompare(b.nome));
                 naoRetiraram.sort((a, b) => a.nome.localeCompare(b.nome));
                 
+                // SALVAR DADOS DO RELATÓRIO ATUAL
+                relatorioAtual = {
+                    jaRetiraram: [...jaRetiraram],
+                    naoRetiraram: [...naoRetiraram],
+                    retiradas: [...retiradasFiltradas]
+                };
+                
                 // Formatar mês para exibição
                 const meses = [
                     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -3619,7 +3911,13 @@
                 // Atualizar listas
                 atualizarListaRetirados(jaRetiraram, retiradasFiltradas);
                 atualizarListaNaoRetiraram(naoRetiraram);
-                atualizarHistoricoRetiradas(retiradasFiltradas);
+                
+                // Atualizar contadores
+                document.getElementById('contadorRetirados').textContent = `(${jaRetiraram.length})`;
+                document.getElementById('contadorPendentes').textContent = `(${naoRetiraram.length})`;
+                
+                // Aplicar filtro de status atual
+                filtrarRelatorioPorStatus();
                 
                 // Atualizar título
                 const cardTitle = document.querySelector('#relatorios .card-title');
@@ -3652,11 +3950,18 @@
                                     ${colab.cidade ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.cidade}</span>` : ''}
                                     ${colab.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.departamento}</span>` : ''}
                                 </div>
-                                ${retiradaDoColab ? `
-                                    <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-primary); color: var(--wsnet-primary); border-radius: var(--radius-sm); cursor: pointer;" onclick="verDetalhesRetirada('${retiradaDoColab.id}')">
-                                        Ver detalhes
-                                    </button>
-                                ` : ''}
+                                <div style="display: flex; gap: 8px;">
+                                    ${retiradaDoColab ? `
+                                        <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-primary); color: var(--wsnet-primary); border-radius: var(--radius-sm); cursor: pointer;" onclick="verDetalhesRetirada('${retiradaDoColab.id}')">
+                                            Detalhes
+                                        </button>
+                                    ` : ''}
+                                    ${currentUser?.role === 'admin' ? `
+                                        <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-warning); color: var(--wsnet-warning); border-radius: var(--radius-sm); cursor: pointer;" onclick="abrirModalCorrecaoRetirada('${colab.id}')" title="Corrigir Retirada">
+                                            <span class="material-icons" style="font-size: 14px;">edit</span>
+                                        </button>
+                                    ` : ''}
+                                </div>
                             </div>
                             ${retiradaDoColab ? `
                                 <div style="margin-left: 24px; font-size: 13px; color: var(--wsnet-text-medium); margin-top: 8px;">
@@ -3700,49 +4005,6 @@
                         <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
                         <p style="color: var(--wsnet-text-light); margin-top: 12px;">
                             Todos os colaboradores retiraram neste mês.
-                        </p>
-                    </div>
-                `;
-            }
-        }
-
-        function atualizarHistoricoRetiradas(retiradasFiltradas) {
-            const containerHistorico = document.getElementById('historicoRetiradas');
-            
-            if (retiradasFiltradas.length > 0) {
-                // Ordenar por data mais recente
-                retiradasFiltradas.sort((a, b) => new Date(b.dataRetirada) - new Date(a.dataRetirada));
-                
-                containerHistorico.innerHTML = retiradasFiltradas.map((retirada, index) => {
-                    const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
-                    return `
-                        <div style="padding: 12px 0; border-bottom: 1px solid var(--wsnet-border);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <span class="material-icons" style="font-size: 16px; color: var(--wsnet-primary); vertical-align: middle; margin-right: 8px;">shopping_cart</span>
-                                    <strong>${retirada.colaboradorTitularNome}</strong>
-                                    ${colaborador ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colaborador.empresa}</span>` : ''}
-                                    ${colaborador ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colaborador.cidade}</span>` : ''}
-                                </div>
-                                <span style="font-size: 12px; color: var(--wsnet-text-medium);">
-                                    ${new Date(retirada.dataRetirada).toLocaleDateString('pt-BR')}
-                                </span>
-                            </div>
-                            <div style="margin-left: 24px; font-size: 13px; color: var(--wsnet-text-medium); margin-top: 8px;">
-                                Retirado por: ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo}) • 
-                                Hora: ${new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
-                                <br>
-                                <small>Registrado por: ${retirada.createdBy || currentUser?.email || 'Sistema'}</small>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                containerHistorico.innerHTML = `
-                    <div style="text-align: center; padding: 20px;">
-                        <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
-                        <p style="color: var(--wsnet-text-light); margin-top: 12px;">
-                            Nenhuma retirada registrada no período.
                         </p>
                     </div>
                 `;
@@ -4163,62 +4425,6 @@
                     currentY += 10;
                 }
                 
-                currentY += 10;
-                
-                // Verificar se precisa de nova página
-                if (currentY > pageHeight - 50) {
-                    doc.addPage();
-                    currentY = marginTop;
-                }
-                
-                // Seção 3: Histórico de Retiradas
-                doc.setFontSize(14);
-                doc.text('HISTÓRICO DE RETIRADAS', marginLeft, currentY);
-                currentY += 10;
-                
-                if (retiradasFiltradas.length > 0) {
-                    // Ordenar por data mais recente
-                    retiradasFiltradas.sort((a, b) => new Date(b.dataRetirada) - new Date(a.dataRetirada));
-                    
-                    doc.setFontSize(9);
-                    let count = 1;
-                    
-                    for (const retirada of retiradasFiltradas) {
-                        if (currentY > pageHeight - 20) {
-                            doc.addPage();
-                            currentY = marginTop;
-                        }
-                        
-                        const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
-                        const dataFormatada = new Date(retirada.dataRetirada).toLocaleDateString('pt-BR');
-                        const horaFormatada = new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                        
-                        doc.text(`${count}. ${dataFormatada} ${horaFormatada} - ${retirada.colaboradorTitularNome}`, marginLeft, currentY);
-                        currentY += 5;
-                        doc.text(`   Retirado por: ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo})`, marginLeft + 5, currentY);
-                        currentY += 5;
-                        
-                        if (colaborador) {
-                            doc.text(`   Empresa: ${colaborador.empresa || ''} - Cidade: ${colaborador.cidade || ''}`, marginLeft + 5, currentY);
-                            currentY += 5;
-                        }
-                        
-                        currentY += 3;
-                        count++;
-                        
-                        // Limitar a 30 registros por página para não sobrecarregar
-                        if (count > 30) {
-                            doc.addPage();
-                            currentY = marginTop;
-                            count = 1;
-                        }
-                    }
-                } else {
-                    doc.setFontSize(10);
-                    doc.text('Nenhuma retirada registrada no período.', marginLeft, currentY);
-                    currentY += 10;
-                }
-                
                 // Rodapé
                 const totalPaginas = doc.internal.getNumberOfPages();
                 for (let i = 1; i <= totalPaginas; i++) {
@@ -4378,10 +4584,48 @@
                 const usuarios = db.getUsuarios();
                 console.log(`Total de usuários no sistema: ${usuarios.length}`);
                 
+                // VERIFICAR SE HÁ SESSÃO ATIVA
+                const sessao = recuperarSessaoUsuario();
+                if (sessao) {
+                    console.log('Sessão encontrada, tentando login automático...');
+                    
+                    // Buscar usuário pelo email da sessão
+                    const usuario = usuarios.find(u => u.email.toLowerCase() === sessao.email.toLowerCase());
+                    if (usuario) {
+                        // Login automático
+                        currentUser = usuario;
+                        mesAtual = db.getMesAtual();
+                        
+                        document.getElementById('userName').textContent = usuario.nome;
+                        document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
+                        document.getElementById('userRole').className = 'user-role';
+
+                        setupUserPermissions();
+                        showMainApp();
+                        console.log('Login automático realizado com sucesso!');
+                        
+                        // Iniciar escutas Firebase se disponível
+                        setTimeout(() => {
+                            try {
+                                if (window.firebaseInitialized) {
+                                    iniciarEscutaColaboradoresEmTempoReal();
+                                    iniciarEscutaRetiradasEmTempoReal();
+                                    iniciarEscutaEmpresasEmTempoReal();
+                                }
+                            } catch (error) {
+                                console.error('Erro ao iniciar escutas Firebase:', error);
+                            }
+                        }, 500);
+                        
+                        return; // Não mostrar tela de login
+                    }
+                }
+                
             } catch (error) {
                 console.error('Erro ao inicializar banco de dados:', error);
             }
             
+            // Se não houver sessão, mostrar tela de login normalmente
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', function(e) {
