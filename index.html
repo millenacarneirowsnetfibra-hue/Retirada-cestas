@@ -1849,34 +1849,35 @@
                 role: usuario.role,
                 timestamp: new Date().getTime()
             };
-            localStorage.setItem('sessaoUsuario', JSON.stringify(sessao));
+            // Usar sessionStorage em vez de localStorage - será limpo ao fechar o navegador
+            sessionStorage.setItem('sessaoUsuario', JSON.stringify(sessao));
         }
 
         function recuperarSessaoUsuario() {
-            const sessaoStr = localStorage.getItem('sessaoUsuario');
+            const sessaoStr = sessionStorage.getItem('sessaoUsuario');
             if (!sessaoStr) return null;
             
             try {
                 const sessao = JSON.parse(sessaoStr);
-                // Verificar se a sessão tem menos de 24 horas
+                // Verificar se a sessão tem menos de 12 horas
                 const agora = new Date().getTime();
                 const diferencaHoras = (agora - sessao.timestamp) / (1000 * 60 * 60);
                 
-                if (diferencaHoras > 24) {
-                    // Sessão expirou (mais de 24 horas)
-                    localStorage.removeItem('sessaoUsuario');
+                if (diferencaHoras > 12) {
+                    // Sessão expirou (mais de 12 horas)
+                    sessionStorage.removeItem('sessaoUsuario');
                     return null;
                 }
                 
                 return sessao;
             } catch (error) {
-                localStorage.removeItem('sessaoUsuario');
+                sessionStorage.removeItem('sessaoUsuario');
                 return null;
             }
         }
 
         function limparSessaoUsuario() {
-            localStorage.removeItem('sessaoUsuario');
+            sessionStorage.removeItem('sessaoUsuario');
         }
 
         // ==================== BANCO DE DADOS LOCAL ====================
@@ -2151,7 +2152,7 @@
                     if (usuario) {
                         currentUser = usuario;
                         
-                        // SALVAR SESSÃO
+                        // SALVAR SESSÃO APENAS NA SESSIONSTORAGE (não persiste ao fechar navegador)
                         salvarSessaoUsuario(usuario);
                         
                         // IMPORTANTE: Carregar o mês atual do localStorage
@@ -4719,10 +4720,10 @@
                 const usuarios = db.getUsuarios();
                 console.log(`Total de usuários no sistema: ${usuarios.length}`);
                 
-                // VERIFICAR SE HÁ SESSÃO ATIVA
+                // VERIFICAR SE HÁ SESSÃO ATIVA (APENAS SESSIONSTORAGE)
                 const sessao = recuperarSessaoUsuario();
                 if (sessao) {
-                    console.log('Sessão encontrada, tentando login automático...');
+                    console.log('Sessão ativa encontrada na sessão atual. Fazendo login automático...');
                     
                     // Buscar usuário pelo email da sessão
                     const usuario = usuarios.find(u => u.email.toLowerCase() === sessao.email.toLowerCase());
@@ -4756,11 +4757,16 @@
                     }
                 }
                 
+                // Se não houver sessão ativa, mostrar tela de login
+                console.log('Nenhuma sessão ativa encontrada. Mostrando tela de login...');
+                showLoginScreen();
+                
             } catch (error) {
-                console.error('Erro ao inicializar banco de dados:', error);
+                console.error('Erro ao inicializar sistema:', error);
+                showLoginScreen();
             }
             
-            // Se não houver sessão, mostrar tela de login normalmente
+            // Configurar formulário de login
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', function(e) {
