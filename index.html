@@ -547,6 +547,16 @@
             color: var(--wsnet-accent);
         }
 
+        .badge-active {
+            background: rgba(0, 204, 102, 0.1);
+            color: var(--wsnet-success);
+        }
+
+        .badge-inactive {
+            background: rgba(102, 102, 102, 0.1);
+            color: var(--wsnet-text-light);
+        }
+
         /* Charts */
         .chart-container {
             background: var(--wsnet-bg-card);
@@ -1130,11 +1140,19 @@
                         </div>
                         
                         <div class="card stat-card">
+                            <div class="stat-icon total">
+                                <span class="material-icons">check_circle</span>
+                            </div>
+                            <div class="stat-value" id="ativosDashboard">0</div>
+                            <div class="stat-label">Colaboradores Ativos</div>
+                        </div>
+                        
+                        <div class="card stat-card">
                             <div class="stat-icon pending">
                                 <span class="material-icons">pending_actions</span>
                             </div>
                             <div class="stat-value" id="pendentes">0</div>
-                            <div class="stat-label">Pendentes</div>
+                            <div class="stat-label">Pendentes (Ativos)</div>
                         </div>
                         
                         <div class="card stat-card">
@@ -1142,15 +1160,7 @@
                                 <span class="material-icons">percent</span>
                             </div>
                             <div class="stat-value" id="percentualRetirado">0%</div>
-                            <div class="stat-label">Percentual Retirado</div>
-                        </div>
-                        
-                        <div class="card stat-card">
-                            <div class="stat-icon company">
-                                <span class="material-icons">location_city</span>
-                            </div>
-                            <div class="stat-value" id="cidadeAtual">Todas</div>
-                            <div class="stat-label">Cidade Selecionada</div>
+                            <div class="stat-label">Percentual Retirado (Ativos)</div>
                         </div>
                     </div>
 
@@ -1159,7 +1169,7 @@
                         <div class="chart-header">
                             <h3 class="card-title">
                                 <span class="material-icons">pie_chart</span>
-                                Status das Retiradas
+                                Status das Retiradas (Apenas Ativos)
                             </h3>
                         </div>
                         <div style="height: 300px;">
@@ -1172,7 +1182,7 @@
                         <div class="card-header">
                             <h3 class="card-title">
                                 <span class="material-icons">location_on</span>
-                                Distribuição por Cidade
+                                Distribuição por Cidade (Ativos)
                             </h3>
                         </div>
                         <div id="distribuicaoCidade">
@@ -1210,7 +1220,7 @@
                         <div class="card-header">
                             <h3 class="card-title">
                                 <span class="material-icons">shopping_cart</span>
-                                Retiradas Pendentes
+                                Retiradas Pendentes (Apenas Colaboradores Ativos)
                             </h3>
                         </div>
                         
@@ -1284,6 +1294,14 @@
                                 </select>
                             </div>
                             <div class="filter-group">
+                                <label class="form-label">Filtrar por Status:</label>
+                                <select class="form-control" id="filtroStatusColaboradores" onchange="filtrarColaboradores()">
+                                    <option value="todos">Todos os Status</option>
+                                    <option value="ativo">Apenas Ativos</option>
+                                    <option value="inativo">Apenas Inativos</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
                                 <label class="form-label">Buscar:</label>
                                 <div class="search-box">
                                     <span class="material-icons">search</span>
@@ -1310,7 +1328,7 @@
                                 <div style="flex: 1;">Empresa</div>
                                 <div style="flex: 1;">Cidade</div>
                                 <div style="flex: 1;">Departamento</div>
-                                <div style="flex: 1; text-align: center;">Dependentes</div>
+                                <div style="flex: 1; text-align: center;">Status</div>
                                 <div style="flex: 1; text-align: center;">Ações</div>
                             </div>
                             <div id="listaColaboradores">
@@ -1516,6 +1534,14 @@
                         <label class="form-label">Departamento *</label>
                         <select class="form-control" id="departamentoColaborador" required>
                             <option value="">Selecione o departamento...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Status do Colaborador *</label>
+                        <select class="form-control" id="statusColaborador" required>
+                            <option value="ativo" selected>Ativo</option>
+                            <option value="inativo">Inativo</option>
                         </select>
                     </div>
                 </form>
@@ -2364,9 +2390,10 @@
                 const empresa = document.getElementById('empresaColaborador').value;
                 const cidade = document.getElementById('cidadeColaborador').value;
                 const departamento = document.getElementById('departamentoColaborador').value;
+                const status = document.getElementById('statusColaborador').value;
                 const colaboradorId = document.getElementById('colaboradorId').value;
 
-                if (!nome || !empresa || !cidade || !departamento) {
+                if (!nome || !empresa || !cidade || !departamento || !status) {
                     showAlert('Preencha todos os campos obrigatórios!', 'error');
                     return;
                 }
@@ -2376,6 +2403,7 @@
                     empresa: empresa,
                     cidade: cidade,
                     departamento: departamento,
+                    status: status,
                     dependentes: [...dependentesEditando],
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUser?.email || "Sistema"
@@ -2757,6 +2785,7 @@
         function obterColaboradoresFiltrados() {
             const empresaSelecionada = document.getElementById('filtroEmpresaColaboradores').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeColaboradores').value;
+            const statusSelecionado = document.getElementById('filtroStatusColaboradores').value;
             const search = document.getElementById('searchColaborador').value.toLowerCase();
             
             let filtrados = [...colaboradoresLista];
@@ -2769,6 +2798,11 @@
             // Aplicar filtro de cidade
             if (cidadeSelecionada !== 'todas') {
                 filtrados = filtrados.filter(c => c.cidade === cidadeSelecionada);
+            }
+            
+            // Aplicar filtro de status
+            if (statusSelecionado !== 'todos') {
+                filtrados = filtrados.filter(c => c.status === statusSelecionado);
             }
             
             // Aplicar filtro de busca
@@ -2791,9 +2825,11 @@
             if (contadorElement && colaboradoresLista.length > 0) {
                 const totalFiltrado = colaboradoresFiltrados.length;
                 const totalGeral = colaboradoresLista.length;
+                const ativos = colaboradoresLista.filter(c => c.status === 'ativo').length;
+                const inativos = colaboradoresLista.filter(c => c.status === 'inativo').length;
                 
                 if (totalFiltrado === totalGeral) {
-                    contadorElement.textContent = `Total: ${totalGeral}`;
+                    contadorElement.textContent = `Total: ${totalGeral} (${ativos} ativos, ${inativos} inativos)`;
                 } else {
                     contadorElement.textContent = `Mostrando ${totalFiltrado} de ${totalGeral}`;
                 }
@@ -2805,28 +2841,34 @@
             const empresaSelecionada = document.getElementById('filtroEmpresaDashboard').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeDashboard').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
+            
+            // Apenas colaboradores ativos para cálculos do dashboard
+            const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+            const colaboradoresInativos = colaboradoresFiltrados.filter(c => c.status === 'inativo');
+            
             const retiradasFiltradas = retiradasLista.filter(r => {
                 const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                 if (!colaborador) return false;
                 
                 let empresaOk = empresaSelecionada === 'todas' || colaborador.empresa === empresaSelecionada;
                 let cidadeOk = cidadeSelecionada === 'todas' || colaborador.cidade === cidadeSelecionada;
+                let ativoOk = colaborador.status === 'ativo'; // Apenas ativos para retiradas
                 
-                return empresaOk && cidadeOk;
+                return empresaOk && cidadeOk && ativoOk;
             });
 
-            const pendentes = colaboradoresFiltrados.length - retiradasFiltradas.length;
-            const percentual = colaboradoresFiltrados.length > 0 
-                ? ((retiradasFiltradas.length / colaboradoresFiltrados.length) * 100).toFixed(1) 
+            const pendentes = colaboradoresAtivos.length - retiradasFiltradas.length;
+            const percentual = colaboradoresAtivos.length > 0 
+                ? ((retiradasFiltradas.length / colaboradoresAtivos.length) * 100).toFixed(1) 
                 : 0;
 
             document.getElementById('totalColaboradores').textContent = colaboradoresFiltrados.length;
+            document.getElementById('ativosDashboard').textContent = colaboradoresAtivos.length;
             document.getElementById('pendentes').textContent = pendentes;
             document.getElementById('percentualRetirado').textContent = percentual + '%';
-            document.getElementById('cidadeAtual').textContent = cidadeSelecionada === 'todas' ? 'Todas' : cidadeSelecionada;
 
-            carregarGraficos(colaboradoresFiltrados, retiradasFiltradas);
-            atualizarDistribuicaoCidade();
+            carregarGraficos(colaboradoresAtivos, retiradasFiltradas);
+            atualizarDistribuicaoCidade(colaboradoresAtivos, retiradasFiltradas);
 
             const ultimasRetiradas = retiradasFiltradas.slice(-5).reverse();
             const container = document.getElementById('ultimasRetiradas');
@@ -2864,15 +2906,15 @@
             }
         }
 
-        function atualizarDistribuicaoCidade() {
+        function atualizarDistribuicaoCidade(colaboradoresAtivos, retiradasFiltradas) {
             const container = document.getElementById('distribuicaoCidade');
             const cidades = ['Itanhaém', 'Mongaguá', 'Peruíbe'];
             
             let distribuiçãoHTML = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">';
             
             cidades.forEach(cidade => {
-                const totalColaboradores = colaboradoresLista.filter(c => c.cidade === cidade).length;
-                const retiradasCidade = retiradasLista.filter(r => {
+                const totalColaboradores = colaboradoresAtivos.filter(c => c.cidade === cidade).length;
+                const retiradasCidade = retiradasFiltradas.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                     return colaborador && colaborador.cidade === cidade;
                 }).length;
@@ -2883,7 +2925,7 @@
                     <div style="background: var(--wsnet-bg-light); padding: 20px; border-radius: var(--radius-md); text-align: center;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--wsnet-primary-dark); margin-bottom: 8px;">${cidade}</div>
                         <div style="font-size: 24px; font-weight: 700; color: var(--wsnet-primary); margin-bottom: 4px;">${totalColaboradores}</div>
-                        <div style="font-size: 12px; color: var(--wsnet-text-medium);">Total Colaboradores</div>
+                        <div style="font-size: 12px; color: var(--wsnet-text-medium);">Total Colaboradores (Ativos)</div>
                         <div style="display: flex; justify-content: space-between; margin-top: 12px;">
                             <div>
                                 <div style="font-size: 18px; font-weight: 600; color: var(--wsnet-success);">${retiradasCidade}</div>
@@ -2906,9 +2948,9 @@
             container.innerHTML = distribuiçãoHTML;
         }
 
-        function carregarGraficos(colaboradoresFiltrados, retiradasFiltradas) {
+        function carregarGraficos(colaboradoresAtivos, retiradasFiltradas) {
             const retirados = retiradasFiltradas.length;
-            const pendentes = colaboradoresFiltrados.length - retirados;
+            const pendentes = colaboradoresAtivos.length - retirados;
 
             const ctx = document.getElementById('chartStatus').getContext('2d');
             if (charts.status) charts.status.destroy();
@@ -2942,8 +2984,11 @@
             const cidadeSelecionada = document.getElementById('filtroCidadeRetirada').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
             
+            // Apenas colaboradores ATIVOS para retirada
+            const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+            
             const retiradosIds = retiradasLista.map(r => r.colaboradorTitularId);
-            const pendentes = colaboradoresFiltrados.filter(c => !retiradosIds.includes(c.id));
+            const pendentes = colaboradoresAtivos.filter(c => !retiradosIds.includes(c.id));
 
             const container = document.getElementById('listaRetirada');
             
@@ -2965,12 +3010,20 @@
                         <span class="badge-warning" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Pendente</span>
                     </div>
                 `).join('');
+            } else if (colaboradoresAtivos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <span class="material-icons" style="font-size: 48px; color: var(--wsnet-danger);">person_off</span>
+                        <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhum colaborador ativo!</h3>
+                        <p style="color: var(--wsnet-text-medium);">Não há colaboradores ativos para retirada com os filtros aplicados.</p>
+                    </div>
+                `;
             } else {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
                         <span class="material-icons" style="font-size: 48px; color: var(--wsnet-success);">check_circle</span>
                         <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Todas as cestas foram retiradas!</h3>
-                        <p style="color: var(--wsnet-text-medium);">Nenhum colaborador pendente para este mês.</p>
+                        <p style="color: var(--wsnet-text-medium;">Nenhum colaborador pendente para este mês.</p>
                     </div>
                 `;
             }
@@ -3124,8 +3177,8 @@
                             ${colaborador.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 4px 8px; border-radius: 8px; font-size: 12px;">${colaborador.departamento}</span>` : 'Não informado'}
                         </div>
                         <div style="flex: 1; text-align: center;">
-                            <span style="background: ${colaborador.dependentes?.length > 0 ? 'rgba(0, 153, 204, 0.1)' : 'rgba(102, 102, 102, 0.1)'}; color: ${colaborador.dependentes?.length > 0 ? 'var(--wsnet-info)' : 'var(--wsnet-text-light)'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
-                                ${colaborador.dependentes?.length || 0}
+                            <span class="${colaborador.status === 'ativo' ? 'badge-active' : 'badge-inactive'}" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                                ${colaborador.status === 'ativo' ? 'Ativo' : 'Inativo'}
                             </span>
                         </div>
                         <div style="flex: 1; display: flex; gap: 8px; justify-content: center;">
@@ -3145,7 +3198,7 @@
                     <div style="text-align: center; padding: 40px;">
                         <span class="material-icons" style="font-size: 48px; color: var(--wsnet-border); opacity: 0.5;">group</span>
                         <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhum colaborador encontrado</h3>
-                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' ? 'Tente mudar os filtros de empresa ou cidade.' : 'Clique em "Novo Colaborador" para começar.'}</p>
+                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' || document.getElementById('filtroStatusColaboradores').value !== 'todos' ? 'Tente mudar os filtros de empresa, cidade ou status.' : 'Clique em "Novo Colaborador" para começar.'}</p>
                     </div>
                 `;
             }
@@ -3174,6 +3227,9 @@
             deptoSelect.innerHTML = options;
             
             carregarEmpresasSelect();
+            
+            // Definir status padrão como "ativo"
+            document.getElementById('statusColaborador').value = 'ativo';
             
             dependentesEditando = [];
             modoEdicao = false;
@@ -3206,6 +3262,7 @@
             carregarEmpresasSelect();
             document.getElementById('empresaColaborador').value = colaborador.empresa || '';
             document.getElementById('cidadeColaborador').value = colaborador.cidade || '';
+            document.getElementById('statusColaborador').value = colaborador.status || 'ativo';
             
             dependentesEditando = [...(colaborador.dependentes || [])];
             modoEdicao = true;
@@ -3852,7 +3909,7 @@
                 // Carregar retiradas do mês selecionado
                 const retiradasMes = await carregarRetiradasPorMes(mesSelecionado);
                 
-                // Filtrar colaboradores
+                // Filtrar colaboradores (apenas ativos para relatórios de retirada)
                 let colaboradoresFiltrados = [...colaboradoresLista];
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
@@ -3861,6 +3918,9 @@
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.cidade === cidadeSelecionada);
                 }
                 
+                // Para relatório, considerar apenas colaboradores ATIVOS
+                const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+                
                 // Filtrar retiradas pelos mesmos filtros de empresa e cidade
                 let retiradasFiltradas = retiradasMes.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
@@ -3868,20 +3928,21 @@
                     
                     let empresaOk = empresaSelecionada === 'todas' || colaborador.empresa === empresaSelecionada;
                     let cidadeOk = cidadeSelecionada === 'todas' || colaborador.cidade === cidadeSelecionada;
+                    let ativoOk = colaborador.status === 'ativo'; // Apenas ativos para relatório
                     
-                    return empresaOk && cidadeOk;
+                    return empresaOk && cidadeOk && ativoOk;
                 });
                 
                 // Cálculos
-                const totalColaboradores = colaboradoresFiltrados.length;
+                const totalColaboradores = colaboradoresAtivos.length;
                 const totalRetiradas = retiradasFiltradas.length;
                 const percentual = totalColaboradores > 0 
                     ? ((totalRetiradas / totalColaboradores) * 100).toFixed(1)
                     : 0;
                 
                 const retiradosIds = [...new Set(retiradasFiltradas.map(r => r.colaboradorTitularId))];
-                const naoRetiraram = colaboradoresFiltrados.filter(c => !retiradosIds.includes(c.id));
-                const jaRetiraram = colaboradoresFiltrados.filter(c => retiradosIds.includes(c.id));
+                const naoRetiraram = colaboradoresAtivos.filter(c => !retiradosIds.includes(c.id));
+                const jaRetiraram = colaboradoresAtivos.filter(c => retiradosIds.includes(c.id));
                 
                 // Ordenar
                 jaRetiraram.sort((a, b) => a.nome.localeCompare(b.nome));
@@ -4037,6 +4098,10 @@
                             <strong>Departamento:</strong><br>
                             ${colaborador.departamento}
                         </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong>Status:</strong><br>
+                            ${colaborador.status === 'ativo' ? '<span class="badge-active">Ativo</span>' : '<span class="badge-inactive">Inativo</span>'}
+                        </div>
                     ` : ''}
                     <div style="margin-bottom: 15px;">
                         <strong>Quem retirou:</strong><br>
@@ -4097,6 +4162,7 @@
                 
                 const empresaFiltro = document.getElementById('filtroEmpresaColaboradores').value;
                 const cidadeFiltro = document.getElementById('filtroCidadeColaboradores').value;
+                const statusFiltro = document.getElementById('filtroStatusColaboradores').value;
                 const buscaFiltro = document.getElementById('searchColaborador').value;
                 
                 doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, currentY);
@@ -4106,6 +4172,7 @@
                 let filtrosInfo = '';
                 if (empresaFiltro !== 'todas') filtrosInfo += `Empresa: ${empresaFiltro} `;
                 if (cidadeFiltro !== 'todas') filtrosInfo += `Cidade: ${cidadeFiltro} `;
+                if (statusFiltro !== 'todos') filtrosInfo += `Status: ${statusFiltro} `;
                 if (buscaFiltro) filtrosInfo += `Busca: "${buscaFiltro}"`;
                 
                 if (filtrosInfo) {
@@ -4116,7 +4183,7 @@
                 }
                 
                 // Cabeçalho da tabela
-                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Dependentes', 'Data Cadastro']];
+                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Status', 'Dependentes', 'Data Cadastro']];
                 
                 // Dados da tabela
                 const data = colaboradoresFiltrados.map((colab, index) => [
@@ -4125,6 +4192,7 @@
                     colab.empresa || '',
                     colab.cidade || '',
                     colab.departamento || '',
+                    colab.status === 'ativo' ? 'Ativo' : 'Inativo',
                     (colab.dependentes?.length || 0).toString(),
                     colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : 'N/A'
                 ]);
@@ -4143,8 +4211,9 @@
                         2: { cellWidth: 40 }, // Empresa
                         3: { cellWidth: 30 }, // Cidade
                         4: { cellWidth: 40 }, // Departamento
-                        5: { cellWidth: 25 }, // Dependentes
-                        6: { cellWidth: 30 }  // Data
+                        5: { cellWidth: 25 }, // Status
+                        6: { cellWidth: 25 }, // Dependentes
+                        7: { cellWidth: 30 }  // Data
                     }
                 });
                 
@@ -4190,6 +4259,7 @@
                 // Obter informações dos filtros
                 const empresaFiltro = document.getElementById('filtroEmpresaColaboradores').value;
                 const cidadeFiltro = document.getElementById('filtroCidadeColaboradores').value;
+                const statusFiltro = document.getElementById('filtroStatusColaboradores').value;
                 const buscaFiltro = document.getElementById('searchColaborador').value;
                 
                 // Preparar dados
@@ -4203,6 +4273,7 @@
                         'Empresa': colab.empresa || '',
                         'Cidade': colab.cidade || '',
                         'Departamento': colab.departamento || '',
+                        'Status': colab.status === 'ativo' ? 'Ativo' : 'Inativo',
                         'Total Dependentes': dependentes.length,
                         'Dependentes': dependentesStr,
                         'Data Cadastro': colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : '',
@@ -4215,10 +4286,11 @@
                 const ws = XLSX.utils.json_to_sheet(dados);
                 
                 // Adicionar informações de filtro como metadados
-                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || buscaFiltro) {
+                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || statusFiltro !== 'todos' || buscaFiltro) {
                     const infoFiltros = [];
                     if (empresaFiltro !== 'todas') infoFiltros.push(`Empresa: ${empresaFiltro}`);
                     if (cidadeFiltro !== 'todas') infoFiltros.push(`Cidade: ${cidadeFiltro}`);
+                    if (statusFiltro !== 'todos') infoFiltros.push(`Status: ${statusFiltro}`);
                     if (buscaFiltro) infoFiltros.push(`Busca: "${buscaFiltro}"`);
                     
                     const infoRow = [
@@ -4239,6 +4311,7 @@
                     { wch: 20 },  // Empresa
                     { wch: 15 },  // Cidade
                     { wch: 20 },  // Departamento
+                    { wch: 10 },  // Status
                     { wch: 15 },  // Total Dependentes
                     { wch: 40 },  // Dependentes
                     { wch: 15 },  // Data Cadastro
@@ -4319,7 +4392,7 @@
                 const totalRetiradas = document.getElementById('relatorioTotalRetiradas').textContent;
                 const percentual = document.getElementById('relatorioPercentual').textContent;
                 
-                doc.text(`Total de Colaboradores: ${totalColaboradores}`, marginLeft, currentY);
+                doc.text(`Total de Colaboradores Ativos: ${totalColaboradores}`, marginLeft, currentY);
                 currentY += 7;
                 doc.text(`Retiradas Realizadas: ${totalRetiradas}`, marginLeft, currentY);
                 currentY += 7;
@@ -4329,7 +4402,7 @@
                 // Carregar dados do relatório
                 const retiradasMes = await carregarRetiradasPorMes(mesReferencia);
                 
-                // Filtrar colaboradores
+                // Filtrar colaboradores (apenas ativos)
                 let colaboradoresFiltrados = [...colaboradoresLista];
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
@@ -4338,6 +4411,9 @@
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.cidade === cidadeSelecionada);
                 }
                 
+                // Apenas colaboradores ativos
+                const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+                
                 // Filtrar retiradas pelos mesmos filtros de empresa e cidade
                 let retiradasFiltradas = retiradasMes.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
@@ -4345,13 +4421,14 @@
                     
                     let empresaOk = empresaSelecionada === 'todas' || colaborador.empresa === empresaSelecionada;
                     let cidadeOk = cidadeSelecionada === 'todas' || colaborador.cidade === cidadeSelecionada;
+                    let ativoOk = colaborador.status === 'ativo';
                     
-                    return empresaOk && cidadeOk;
+                    return empresaOk && cidadeOk && ativoOk;
                 });
                 
                 const retiradosIds = [...new Set(retiradasFiltradas.map(r => r.colaboradorTitularId))];
-                const jaRetiraram = colaboradoresFiltrados.filter(c => retiradosIds.includes(c.id));
-                const naoRetiraram = colaboradoresFiltrados.filter(c => !retiradosIds.includes(c.id));
+                const jaRetiraram = colaboradoresAtivos.filter(c => retiradosIds.includes(c.id));
+                const naoRetiraram = colaboradoresAtivos.filter(c => !retiradosIds.includes(c.id));
                 
                 // Verificar se precisa de nova página
                 if (currentY > pageHeight - 50) {
@@ -4498,6 +4575,10 @@
                         <div class="item">
                             <span class="label">Departamento:</span>
                             <span>${colaborador.departamento}</span>
+                        </div>
+                        <div class="item">
+                            <span class="label">Status:</span>
+                            <span>${colaborador.status === 'ativo' ? 'Ativo' : 'Inativo'}</span>
                         </div>
                     ` : ''}
                     
