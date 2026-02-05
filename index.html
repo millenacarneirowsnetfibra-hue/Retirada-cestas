@@ -568,7 +568,7 @@
             min-width: 200px;
         }
 
-        /* Modais */
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -1065,10 +1065,6 @@
                             <span class="material-icons">delete_sweep</span>
                             Limpar Retiradas
                         </button>
-                        <button type="button" class="btn btn-info btn-sm" onclick="abrirModalReverterRetirada()" id="btnReverterRetirada" style="display: none;">
-                            <span class="material-icons">undo</span>
-                            Reverter Retirada
-                        </button>
                     </div>
                     
                     <!-- Mobile Actions -->
@@ -1105,13 +1101,6 @@
                                 <option value="Peruíbe">Peruíbe</option>
                             </select>
                         </div>
-                        <div class="filter-group">
-                            <label class="form-label">Status do Colaborador:</label>
-                            <select class="form-control" id="filtroStatusDashboard" onchange="carregarDashboard()">
-                                <option value="ativos">Apenas Ativos</option>
-                                <option value="todos">Todos (Ativos e Inativos)</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="dashboard-grid">
@@ -1120,7 +1109,7 @@
                                 <span class="material-icons">group</span>
                             </div>
                             <div class="stat-value" id="totalColaboradores">0</div>
-                            <div class="stat-label">Total de Colaboradores Ativos</div>
+                            <div class="stat-label">Total de Colaboradores</div>
                         </div>
                         
                         <div class="card stat-card">
@@ -1153,7 +1142,7 @@
                         <div class="chart-header">
                             <h3 class="card-title">
                                 <span class="material-icons">pie_chart</span>
-                                Status das Retiradas (Ativos)
+                                Status das Retiradas
                             </h3>
                         </div>
                         <div style="height: 300px;">
@@ -1166,7 +1155,7 @@
                         <div class="card-header">
                             <h3 class="card-title">
                                 <span class="material-icons">location_on</span>
-                                Distribuição por Cidade (Ativos)
+                                Distribuição por Cidade
                             </h3>
                         </div>
                         <div id="distribuicaoCidade">
@@ -1205,7 +1194,6 @@
                             <h3 class="card-title">
                                 <span class="material-icons">shopping_cart</span>
                                 Retiradas Pendentes
-                                <span id="totalRetiradosTopo" style="font-size: 14px; color: var(--wsnet-text-medium); margin-left: 12px;"></span>
                             </h3>
                         </div>
                         
@@ -1232,20 +1220,6 @@
                                     <input type="text" class="form-control" id="searchRetirada" placeholder="Buscar colaborador..." onkeyup="filtrarColaboradoresRetirada()">
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Tabs para Pendentes/Retirados -->
-                        <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--wsnet-border); padding-bottom: 8px;">
-                            <button type="button" class="btn-tab-retirada active" id="btnTabPendentes" onclick="alternarTabRetirada('pendentes')" style="flex: 1; padding: 10px; background: var(--wsnet-bg-light); border: none; border-radius: var(--radius-sm); cursor: pointer; text-align: center; color: var(--wsnet-primary-dark); font-weight: 500;">
-                                <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">pending_actions</span>
-                                Pendentes
-                                <span id="contadorPendentes" class="badge-warning" style="margin-left: 5px; padding: 2px 6px; font-size: 11px;">0</span>
-                            </button>
-                            <button type="button" class="btn-tab-retirada" id="btnTabRetirados" onclick="alternarTabRetirada('retirados')" style="flex: 1; padding: 10px; background: var(--wsnet-bg-light); border: none; border-radius: var(--radius-sm); cursor: pointer; text-align: center; color: var(--wsnet-text-medium);">
-                                <span class="material-icons" style="font-size: 16px; vertical-align: middle; margin-right: 5px;">check_circle</span>
-                                Já Retiraram
-                                <span id="contadorRetirados" class="badge-success" style="margin-left: 5px; padding: 2px 6px; font-size: 11px;">0</span>
-                            </button>
                         </div>
 
                         <div id="listaRetirada">
@@ -1293,14 +1267,6 @@
                                 </select>
                             </div>
                             <div class="filter-group">
-                                <label class="form-label">Status:</label>
-                                <select class="form-control" id="filtroStatusColaboradores" onchange="filtrarColaboradores()">
-                                    <option value="ativos">Apenas Ativos</option>
-                                    <option value="inativos">Apenas Inativos</option>
-                                    <option value="todos">Todos</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
                                 <label class="form-label">Buscar:</label>
                                 <div class="search-box">
                                     <span class="material-icons">search</span>
@@ -1327,8 +1293,7 @@
                                 <div style="flex: 1;">Empresa</div>
                                 <div style="flex: 1;">Cidade</div>
                                 <div style="flex: 1;">Departamento</div>
-                                <div style="flex: 0.8; text-align: center;">Status</div>
-                                <div style="flex: 0.8; text-align: center;">Dependentes</div>
+                                <div style="flex: 1; text-align: center;">Dependentes</div>
                                 <div style="flex: 1; text-align: center;">Ações</div>
                             </div>
                             <div id="listaColaboradores">
@@ -1388,13 +1353,6 @@
                                     <option value="Itanhaém">Itanhaém</option>
                                     <option value="Mongaguá">Mongaguá</option>
                                     <option value="Peruíbe">Peruíbe</option>
-                                </select>
-                            </div>
-                            <div class="filter-group">
-                                <label class="form-label">Status Colaborador:</label>
-                                <select class="form-control" id="statusRelatorio">
-                                    <option value="ativos">Apenas Ativos</option>
-                                    <option value="todos">Todos (Ativos e Inativos)</option>
                                 </select>
                             </div>
                             <div class="filter-group" style="align-self: flex-end;">
@@ -1486,6 +1444,23 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <span class="material-icons">history</span>
+                                        Histórico de Retiradas do Mês
+                                    </h3>
+                                </div>
+                                <div id="historicoRetiradas" style="padding: 16px;">
+                                    <div style="text-align: center; padding: 20px;">
+                                        <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
+                                        <p style="color: var(--wsnet-text-light); margin-top: 12px;">
+                                            Selecione os filtros e clique em "Gerar Relatório"
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1532,18 +1507,6 @@
                         <select class="form-control" id="departamentoColaborador" required>
                             <option value="">Selecione o departamento...</option>
                         </select>
-                    </div>
-
-                    <!-- Status Ativo/Inativo -->
-                    <div class="form-group">
-                        <label class="form-label">Status do Colaborador *</label>
-                        <select class="form-control" id="statusColaborador" required>
-                            <option value="ativo" selected>Ativo</option>
-                            <option value="inativo">Inativo</option>
-                        </select>
-                        <small style="color: var(--wsnet-text-medium); font-size: 12px; display: block; margin-top: 4px;">
-                            Colaboradores inativos não aparecem na lista de retiradas pendentes.
-                        </small>
                     </div>
                 </form>
 
@@ -1682,10 +1645,9 @@
                 <p style="margin-bottom: 20px; color: var(--wsnet-text-medium);">Ao iniciar um novo mês, o sistema irá:</p>
                 <ul style="margin-bottom: 20px; padding-left: 20px; color: var(--wsnet-text-medium);">
                     <li>Salvar todas as retiradas do mês atual no histórico</li>
-                    <li>Limpar as retiradas para o novo mês</li>
+                    <li>Zerar as retiradas para o novo mês</li>
                     <li>Manter todos os colaboradores e dependentes</li>
-                    <li><strong>TODOS os colaboradores ficarão como PENDENTES para o novo mês</strong> (inclusive os que retiraram no mês anterior)</li>
-                    <li>Esta é a ação correta pois ao encerrar o mês, o sistema NÃO deve considerar que as cestas foram retiradas automaticamente</li>
+                    <li>Todos os colaboradores ficarão como PENDENTES para o novo mês</li>
                 </ul>
                 
                 <div class="form-group">
@@ -1798,32 +1760,6 @@
                     <span class="material-icons">print</span>
                     Imprimir Recibo
                 </button>
-                <button type="button" class="btn btn-danger" onclick="abrirModalReverterRetiradaEspecifica()" id="btnReverterEstaRetirada">
-                    <span class="material-icons">undo</span>
-                    Reverter Retirada
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Reverter Retirada -->
-    <div id="modalReverterRetirada" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-body" style="text-align: center; padding: 40px;">
-                <div style="font-size: 60px; color: var(--wsnet-danger); margin-bottom: 20px;">
-                    <span class="material-icons">warning</span>
-                </div>
-                <h3 id="reverterTitulo" style="margin-bottom: 16px; color: var(--wsnet-primary-dark);">Reverter Retirada</h3>
-                <p id="reverterMensagem" style="color: var(--wsnet-text-medium); margin-bottom: 30px;">
-                    Esta ação irá remover o registro de retirada e o colaborador voltará para a lista de pendentes.
-                </p>
-                <div id="reverterColaboradorInfo" style="background: var(--wsnet-bg-light); padding: 12px; border-radius: var(--radius-md); margin-bottom: 20px;">
-                    <!-- Informações do colaborador serão preenchidas aqui -->
-                </div>
-                <div style="display: flex; gap: 16px; justify-content: center;">
-                    <button type="button" class="btn btn-outline" onclick="closeModal('modalReverterRetirada')">Cancelar</button>
-                    <button type="button" class="btn btn-danger" onclick="confirmarReverterRetirada()" id="btnConfirmarReverter">Reverter Retirada</button>
-                </div>
             </div>
         </div>
     </div>
@@ -1863,12 +1799,6 @@
         
         // IMPORTANTE: Agora o mês atual é carregado do localStorage sempre que o sistema inicia
         let mesAtual = null; // Será carregado após login
-
-        // Variável para controlar a aba atual na tela de retiradas
-        let tabRetiradaAtual = 'pendentes'; // 'pendentes' ou 'retirados'
-        
-        // Variável para armazenar a retirada que será revertida
-        let retiradaParaReverter = null;
 
         // ==================== BANCO DE DADOS LOCAL ====================
         class LocalDatabase {
@@ -2057,33 +1987,6 @@
                     return u.email.toLowerCase() === email && u.senha === senha;
                 });
             }
-
-            // Função para salvar o usuário logado
-            salvarUsuarioLogado(usuario) {
-                try {
-                    localStorage.setItem('usuarioLogado', JSON.stringify(usuario));
-                    return true;
-                } catch (error) {
-                    console.error('Erro ao salvar usuário logado:', error);
-                    return false;
-                }
-            }
-
-            // Função para obter o usuário logado
-            getUsuarioLogado() {
-                try {
-                    const usuario = JSON.parse(localStorage.getItem('usuarioLogado'));
-                    return usuario;
-                } catch (error) {
-                    console.error('Erro ao obter usuário logado:', error);
-                    return null;
-                }
-            }
-
-            // Função para limpar o usuário logado (logout)
-            limparUsuarioLogado() {
-                localStorage.removeItem('usuarioLogado');
-            }
         }
 
         // ==================== FUNÇÕES RESPONSIVAS ====================
@@ -2117,10 +2020,6 @@
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('mainApp').style.display = 'none';
             currentUser = null;
-            
-            // Limpar usuário logado do localStorage quando fizer logout
-            const db = new LocalDatabase();
-            db.limparUsuarioLogado();
         }
 
         function showMainApp() {
@@ -2173,9 +2072,6 @@
                     if (usuario) {
                         currentUser = usuario;
                         
-                        // Salvar usuário logado no localStorage para persistência
-                        db.salvarUsuarioLogado(usuario);
-                        
                         // IMPORTANTE: Carregar o mês atual do localStorage
                         mesAtual = db.getMesAtual();
                         console.log('Mês atual carregado do localStorage:', mesAtual);
@@ -2204,15 +2100,12 @@
         function setupUserPermissions() {
             const adminButtons = document.getElementById('adminButtons');
             const menuItems = document.querySelectorAll('.menu-item');
-            const btnReverterRetirada = document.getElementById('btnReverterRetirada');
             
             if (currentUser.role === 'admin') {
                 if (adminButtons) adminButtons.style.display = 'flex';
-                if (btnReverterRetirada) btnReverterRetirada.style.display = 'inline-flex';
                 menuItems.forEach(item => item.style.display = 'flex');
             } else if (currentUser.role === 'registrador') {
                 if (adminButtons) adminButtons.style.display = 'none';
-                if (btnReverterRetirada) btnReverterRetirada.style.display = 'none';
                 menuItems.forEach(item => {
                     if (!item.textContent.includes('Retiradas')) {
                         item.style.display = 'none';
@@ -2414,10 +2307,9 @@
                 const empresa = document.getElementById('empresaColaborador').value;
                 const cidade = document.getElementById('cidadeColaborador').value;
                 const departamento = document.getElementById('departamentoColaborador').value;
-                const status = document.getElementById('statusColaborador').value;
                 const colaboradorId = document.getElementById('colaboradorId').value;
 
-                if (!nome || !empresa || !cidade || !departamento || !status) {
+                if (!nome || !empresa || !cidade || !departamento) {
                     showAlert('Preencha todos os campos obrigatórios!', 'error');
                     return;
                 }
@@ -2427,7 +2319,6 @@
                     empresa: empresa,
                     cidade: cidade,
                     departamento: departamento,
-                    status: status, // Adicionando o campo status
                     dependentes: [...dependentesEditando],
                     updatedAt: new Date().toISOString(),
                     updatedBy: currentUser?.email || "Sistema"
@@ -2445,8 +2336,6 @@
                     // Novo colaborador
                     colaboradorData.createdAt = new Date().toISOString();
                     colaboradorData.createdBy = currentUser?.email || "Sistema";
-                    // Status padrão para novo colaborador
-                    if (!colaboradorData.status) colaboradorData.status = 'ativo';
                     await addDoc(collection(db, "colaboradores"), colaboradorData);
                     showAlert('Colaborador cadastrado com sucesso!', 'success');
                 }
@@ -2476,28 +2365,6 @@
             } catch (erro) {
                 console.error("Erro ao excluir:", erro);
                 showAlert('Erro ao excluir colaborador.', 'error');
-            }
-        }
-
-        async function alternarStatusColaboradorFirebase(colaboradorId, novoStatus) {
-            try {
-                const db = window.firebaseDb;
-                const { doc, updateDoc } = window.firebaseCollections;
-                
-                const docRef = doc(db, "colaboradores", colaboradorId);
-                await updateDoc(docRef, {
-                    status: novoStatus,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: currentUser?.email || "Sistema"
-                });
-                
-                const statusText = novoStatus === 'ativo' ? 'ativado' : 'inativado';
-                showAlert(`Colaborador ${statusText} com sucesso!`, 'success');
-                return true;
-            } catch (erro) {
-                console.error("Erro ao alternar status:", erro);
-                showAlert('Erro ao alterar status do colaborador.', 'error');
-                return false;
             }
         }
 
@@ -2626,20 +2493,6 @@
                 return true;
             } catch (erro) {
                 console.error("Erro ao salvar retirada:", erro);
-                return false;
-            }
-        }
-
-        async function excluirRetiradaFirebase(retiradaId) {
-            try {
-                const db = window.firebaseDb;
-                const { doc, deleteDoc } = window.firebaseCollections;
-                
-                const docRef = doc(db, "retiradas", retiradaId);
-                await deleteDoc(docRef);
-                return true;
-            } catch (erro) {
-                console.error("Erro ao excluir retirada:", erro);
                 return false;
             }
         }
@@ -2847,18 +2700,9 @@
         function obterColaboradoresFiltrados() {
             const empresaSelecionada = document.getElementById('filtroEmpresaColaboradores').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeColaboradores').value;
-            const statusSelecionado = document.getElementById('filtroStatusColaboradores').value;
             const search = document.getElementById('searchColaborador').value.toLowerCase();
             
             let filtrados = [...colaboradoresLista];
-            
-            // Aplicar filtro de status
-            if (statusSelecionado === 'ativos') {
-                filtrados = filtrados.filter(c => c.status === 'ativo');
-            } else if (statusSelecionado === 'inativos') {
-                filtrados = filtrados.filter(c => c.status === 'inativo');
-            }
-            // "todos" não aplica filtro de status
             
             // Aplicar filtro de empresa
             if (empresaSelecionada !== 'todas') {
@@ -2903,15 +2747,7 @@
         function carregarDashboard() {
             const empresaSelecionada = document.getElementById('filtroEmpresaDashboard').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeDashboard').value;
-            const statusSelecionado = document.getElementById('filtroStatusDashboard').value;
-            
-            // Filtrar colaboradores por status
-            let colaboradoresParaDashboard = [...colaboradoresLista];
-            if (statusSelecionado === 'ativos') {
-                colaboradoresParaDashboard = colaboradoresParaDashboard.filter(c => c.status === 'ativo');
-            }
-            
-            const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresParaDashboard, empresaSelecionada, cidadeSelecionada);
+            const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
             const retiradasFiltradas = retiradasLista.filter(r => {
                 const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                 if (!colaborador) return false;
@@ -2978,14 +2814,11 @@
             let distribuiçãoHTML = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">';
             
             cidades.forEach(cidade => {
-                const colaboradoresAtivos = colaboradoresLista.filter(c => c.cidade === cidade && c.status === 'ativo');
-                const totalColaboradores = colaboradoresAtivos.length;
-                
+                const totalColaboradores = colaboradoresLista.filter(c => c.cidade === cidade).length;
                 const retiradasCidade = retiradasLista.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
-                    return colaborador && colaborador.cidade === cidade && colaborador.status === 'ativo';
+                    return colaborador && colaborador.cidade === cidade;
                 }).length;
-                
                 const pendentesCidade = totalColaboradores - retiradasCidade;
                 const percentualCidade = totalColaboradores > 0 ? ((retiradasCidade / totalColaboradores) * 100).toFixed(1) : 0;
                 
@@ -2993,7 +2826,7 @@
                     <div style="background: var(--wsnet-bg-light); padding: 20px; border-radius: var(--radius-md); text-align: center;">
                         <div style="font-size: 14px; font-weight: 500; color: var(--wsnet-primary-dark); margin-bottom: 8px;">${cidade}</div>
                         <div style="font-size: 24px; font-weight: 700; color: var(--wsnet-primary); margin-bottom: 4px;">${totalColaboradores}</div>
-                        <div style="font-size: 12px; color: var(--wsnet-text-medium);">Colaboradores Ativos</div>
+                        <div style="font-size: 12px; color: var(--wsnet-text-medium);">Total Colaboradores</div>
                         <div style="display: flex; justify-content: space-between; margin-top: 12px;">
                             <div>
                                 <div style="font-size: 18px; font-weight: 600; color: var(--wsnet-success);">${retiradasCidade}</div>
@@ -3050,141 +2883,39 @@
         function carregarRetirada() {
             const empresaSelecionada = document.getElementById('filtroEmpresaRetirada').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeRetirada').value;
-            
-            // Filtrar apenas colaboradores ATIVOS
-            const colaboradoresAtivos = colaboradoresLista.filter(c => c.status === 'ativo');
-            const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresAtivos, empresaSelecionada, cidadeSelecionada);
+            const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
             
             const retiradosIds = retiradasLista.map(r => r.colaboradorTitularId);
             const pendentes = colaboradoresFiltrados.filter(c => !retiradosIds.includes(c.id));
-            const retirados = colaboradoresFiltrados.filter(c => retiradosIds.includes(c.id));
-
-            // Atualizar contadores
-            document.getElementById('contadorPendentes').textContent = pendentes.length;
-            document.getElementById('contadorRetirados').textContent = retirados.length;
-            document.getElementById('totalRetiradosTopo').textContent = `(${retirados.length} retirados)`;
-
-            renderizarListaRetirada();
-        }
-
-        function alternarTabRetirada(tab) {
-            tabRetiradaAtual = tab;
-            
-            // Atualizar botões
-            document.getElementById('btnTabPendentes').classList.toggle('active', tab === 'pendentes');
-            document.getElementById('btnTabRetirados').classList.toggle('active', tab === 'retirados');
-            
-            // Estilizar botões
-            const btnPendentes = document.getElementById('btnTabPendentes');
-            const btnRetirados = document.getElementById('btnTabRetirados');
-            
-            if (tab === 'pendentes') {
-                btnPendentes.style.background = 'var(--wsnet-bg-light)';
-                btnPendentes.style.color = 'var(--wsnet-primary-dark)';
-                btnPendentes.style.fontWeight = '500';
-                btnRetirados.style.background = 'transparent';
-                btnRetirados.style.color = 'var(--wsnet-text-medium)';
-                btnRetirados.style.fontWeight = '400';
-            } else {
-                btnRetirados.style.background = 'var(--wsnet-bg-light)';
-                btnRetirados.style.color = 'var(--wsnet-primary-dark)';
-                btnRetirados.style.fontWeight = '500';
-                btnPendentes.style.background = 'transparent';
-                btnPendentes.style.color = 'var(--wsnet-text-medium)';
-                btnPendentes.style.fontWeight = '400';
-            }
-            
-            renderizarListaRetirada();
-        }
-
-        function renderizarListaRetirada() {
-            const empresaSelecionada = document.getElementById('filtroEmpresaRetirada').value;
-            const cidadeSelecionada = document.getElementById('filtroCidadeRetirada').value;
-            
-            // Filtrar apenas colaboradores ATIVOS
-            const colaboradoresAtivos = colaboradoresLista.filter(c => c.status === 'ativo');
-            const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresAtivos, empresaSelecionada, cidadeSelecionada);
-            
-            const retiradosIds = retiradasLista.map(r => r.colaboradorTitularId);
-            const pendentes = colaboradoresFiltrados.filter(c => !retiradosIds.includes(c.id));
-            const retirados = colaboradoresFiltrados.filter(c => retiradosIds.includes(c.id));
 
             const container = document.getElementById('listaRetirada');
             
-            if (tabRetiradaAtual === 'pendentes') {
-                if (pendentes.length > 0) {
-                    container.innerHTML = pendentes.map(colaborador => `
-                        <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border); cursor: pointer;" onclick="abrirModalRetirada('${colaborador.id}')">
-                            <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
-                                <span class="material-icons">person</span>
-                            </div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 500; color: var(--wsnet-text-dark); margin-bottom: 4px;">${colaborador.nome}</div>
-                                <div style="font-size: 13px; color: var(--wsnet-text-medium);">
-                                    ${colaborador.empresa ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.empresa}</span>` : ''}
-                                    ${colaborador.cidade ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.cidade}</span>` : ''}
-                                    ${colaborador.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.departamento}</span>` : ''}
-                                    ${colaborador.dependentes?.length || 0} dependente(s)
-                                </div>
-                            </div>
-                            <span class="badge-warning" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Pendente</span>
+            if (pendentes.length > 0) {
+                container.innerHTML = pendentes.map(colaborador => `
+                    <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border); cursor: pointer;" onclick="abrirModalRetirada('${colaborador.id}')">
+                        <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
+                            <span class="material-icons">person</span>
                         </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 40px;">
-                            <span class="material-icons" style="font-size: 48px; color: var(--wsnet-success);">check_circle</span>
-                            <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Todas as cestas foram retiradas!</h3>
-                            <p style="color: var(--wsnet-text-medium);">Nenhum colaborador pendente para este mês.</p>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: var(--wsnet-text-dark); margin-bottom: 4px;">${colaborador.nome}</div>
+                            <div style="font-size: 13px; color: var(--wsnet-text-medium);">
+                                ${colaborador.empresa ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.empresa}</span>` : ''}
+                                ${colaborador.cidade ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.cidade}</span>` : ''}
+                                ${colaborador.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.departamento}</span>` : ''}
+                                ${colaborador.dependentes?.length || 0} dependente(s)
+                            </div>
                         </div>
-                    `;
-                }
+                        <span class="badge-warning" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Pendente</span>
+                    </div>
+                `).join('');
             } else {
-                // Tab "Já Retiraram"
-                if (retirados.length > 0) {
-                    container.innerHTML = retirados.map(colaborador => {
-                        const retiradaDoColab = retiradasLista.find(r => r.colaboradorTitularId === colaborador.id);
-                        return `
-                            <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border);">
-                                <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-success);">
-                                    <span class="material-icons">check_circle</span>
-                                </div>
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 500; color: var(--wsnet-text-dark); margin-bottom: 4px;">${colaborador.nome}</div>
-                                    <div style="font-size: 13px; color: var(--wsnet-text-medium);">
-                                        ${colaborador.empresa ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.empresa}</span>` : ''}
-                                        ${colaborador.cidade ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.cidade}</span>` : ''}
-                                        ${colaborador.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-right: 8px;">${colaborador.departamento}</span>` : ''}
-                                    </div>
-                                    ${retiradaDoColab ? `
-                                        <div style="font-size: 12px; color: var(--wsnet-text-medium); margin-top: 8px;">
-                                            Retirado por: ${retiradaDoColab.quemRetirouNome} • 
-                                            ${new Date(retiradaDoColab.dataRetirada).toLocaleDateString('pt-BR')} ${new Date(retiradaDoColab.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
-                                        </div>
-                                    ` : ''}
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-info); color: var(--wsnet-info); border-radius: var(--radius-sm); cursor: pointer;" onclick="verDetalhesRetiradaColaborador('${colaborador.id}')" title="Ver detalhes">
-                                        <span class="material-icons" style="font-size: 16px;">visibility</span>
-                                    </button>
-                                    ${currentUser.role === 'admin' ? `
-                                        <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-danger); color: var(--wsnet-danger); border-radius: var(--radius-sm); cursor: pointer;" onclick="abrirModalReverterRetiradaColaborador('${colaborador.id}')" title="Reverter retirada">
-                                            <span class="material-icons" style="font-size: 16px;">undo</span>
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                } else {
-                    container.innerHTML = `
-                        <div style="text-align: center; padding: 40px;">
-                            <span class="material-icons" style="font-size: 48px; color: var(--wsnet-border); opacity: 0.5;">group</span>
-                            <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhuma retirada registrada</h3>
-                            <p style="color: var(--wsnet-text-medium);">Nenhum colaborador retirou ainda este mês.</p>
-                        </div>
-                    `;
-                }
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <span class="material-icons" style="font-size: 48px; color: var(--wsnet-success);">check_circle</span>
+                        <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Todas as cestas foram retiradas!</h3>
+                        <p style="color: var(--wsnet-text-medium);">Nenhum colaborador pendente para este mês.</p>
+                    </div>
+                `;
             }
         }
 
@@ -3296,107 +3027,6 @@
             retiradaPendente = null;
         }
 
-        // ==================== REVERTER RETIRADA ====================
-        function abrirModalReverterRetirada() {
-            // Esta função pode ser chamada do botão geral para selecionar qual retirada reverter
-            // Para simplificar, vamos direcionar para a aba de "Já Retiraram"
-            if (tabRetiradaAtual !== 'retirados') {
-                alternarTabRetirada('retirados');
-                showAlert('Navegue para a aba "Já Retiraram" para reverter uma retirada específica.', 'info');
-            } else {
-                showAlert('Clique no botão "Reverter" ao lado do colaborador para reverter sua retirada.', 'info');
-            }
-        }
-
-        function abrirModalReverterRetiradaColaborador(colaboradorId) {
-            const colaborador = colaboradoresLista.find(c => c.id === colaboradorId);
-            if (!colaborador) return;
-
-            const retirada = retiradasLista.find(r => r.colaboradorTitularId === colaboradorId);
-            if (!retirada) return;
-
-            retiradaParaReverter = retirada;
-
-            document.getElementById('reverterTitulo').textContent = 'Reverter Retirada';
-            document.getElementById('reverterMensagem').innerHTML = `
-                <strong>Atenção:</strong> Esta ação irá remover o registro de retirada do colaborador abaixo.
-                O colaborador voltará para a lista de pendentes e poderá retirar novamente.
-            `;
-
-            const colaboradorInfo = document.getElementById('reverterColaboradorInfo');
-            colaboradorInfo.innerHTML = `
-                <div style="text-align: left;">
-                    <div><strong>Colaborador:</strong> ${colaborador.nome}</div>
-                    <div><strong>Empresa:</strong> ${colaborador.empresa}</div>
-                    <div><strong>Cidade:</strong> ${colaborador.cidade}</div>
-                    <div><strong>Retirado por:</strong> ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo})</div>
-                    <div><strong>Data da Retirada:</strong> ${new Date(retirada.dataRetirada).toLocaleString('pt-BR')}</div>
-                </div>
-            `;
-
-            openModal('modalReverterRetirada');
-        }
-
-        function abrirModalReverterRetiradaEspecifica() {
-            // Esta função é chamada do modal de detalhes da retirada
-            if (!ultimaRetiradaRegistrada) {
-                const retiradaAtual = retiradaParaReverter;
-                if (!retiradaAtual) {
-                    showAlert('Nenhuma retirada selecionada para reverter.', 'error');
-                    return;
-                }
-                
-                const colaborador = colaboradoresLista.find(c => c.id === retiradaAtual.colaboradorTitularId);
-                if (!colaborador) return;
-
-                retiradaParaReverter = retiradaAtual;
-
-                document.getElementById('reverterTitulo').textContent = 'Reverter Retirada';
-                document.getElementById('reverterMensagem').innerHTML = `
-                    <strong>Atenção:</strong> Esta ação irá remover o registro de retirada do colaborador abaixo.
-                    O colaborador voltará para a lista de pendentes e poderá retirar novamente.
-                `;
-
-                const colaboradorInfo = document.getElementById('reverterColaboradorInfo');
-                colaboradorInfo.innerHTML = `
-                    <div style="text-align: left;">
-                        <div><strong>Colaborador:</strong> ${colaborador.nome}</div>
-                        <div><strong>Empresa:</strong> ${colaborador.empresa}</div>
-                        <div><strong>Cidade:</strong> ${colaborador.cidade}</div>
-                        <div><strong>Retirado por:</strong> ${retiradaAtual.quemRetirouNome} (${retiradaAtual.quemRetirouTipo})</div>
-                        <div><strong>Data da Retirada:</strong> ${new Date(retiradaAtual.dataRetirada).toLocaleString('pt-BR')}</div>
-                    </div>
-                `;
-
-                closeModal('modalDetalhesRetirada');
-                openModal('modalReverterRetirada');
-            }
-        }
-
-        async function confirmarReverterRetirada() {
-            if (!retiradaParaReverter) {
-                showAlert('Nenhuma retirada selecionada para reverter.', 'error');
-                return;
-            }
-
-            const sucesso = await excluirRetiradaFirebase(retiradaParaReverter.id);
-            
-            if (sucesso) {
-                showAlert(`Retirada revertida com sucesso! ${retiradaParaReverter.colaboradorTitularNome} voltou para a lista de pendentes.`, 'success');
-                closeModal('modalReverterRetirada');
-                
-                // Atualizar a interface
-                if (document.getElementById('retirada').classList.contains('active')) {
-                    carregarRetirada();
-                }
-                carregarDashboard();
-            } else {
-                showAlert('Erro ao reverter retirada. Tente novamente.', 'error');
-            }
-            
-            retiradaParaReverter = null;
-        }
-
         // ==================== COLABORADORES ====================
         function carregarColaboradores() {
             const colaboradoresFiltrados = obterColaboradoresFiltrados();
@@ -3430,12 +3060,7 @@
                         <div style="flex: 1;">
                             ${colaborador.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 4px 8px; border-radius: 8px; font-size: 12px;">${colaborador.departamento}</span>` : 'Não informado'}
                         </div>
-                        <div style="flex: 0.8; text-align: center;">
-                            ${colaborador.status === 'ativo' ? 
-                                `<span class="badge-success" style="padding: 4px 8px; border-radius: 8px; font-size: 11px;">Ativo</span>` : 
-                                `<span class="badge-danger" style="padding: 4px 8px; border-radius: 8px; font-size: 11px;">Inativo</span>`}
-                        </div>
-                        <div style="flex: 0.8; text-align: center;">
+                        <div style="flex: 1; text-align: center;">
                             <span style="background: ${colaborador.dependentes?.length > 0 ? 'rgba(0, 153, 204, 0.1)' : 'rgba(102, 102, 102, 0.1)'}; color: ${colaborador.dependentes?.length > 0 ? 'var(--wsnet-info)' : 'var(--wsnet-text-light)'}; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
                                 ${colaborador.dependentes?.length || 0}
                             </span>
@@ -3444,13 +3069,6 @@
                             <button style="width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0, 102, 204, 0.1); color: var(--wsnet-primary); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="editarColaborador('${colaborador.id}')" title="Editar">
                                 <span class="material-icons">edit</span>
                             </button>
-                            ${colaborador.status === 'ativo' ? 
-                                `<button style="width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="alternarStatusColaborador('${colaborador.id}', 'inativo')" title="Inativar">
-                                    <span class="material-icons">person_off</span>
-                                </button>` : 
-                                `<button style="width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="alternarStatusColaborador('${colaborador.id}', 'ativo')" title="Ativar">
-                                    <span class="material-icons">person_add</span>
-                                </button>`}
                             <button style="width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255, 51, 51, 0.1); color: var(--wsnet-danger); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="excluirColaborador('${colaborador.id}')" title="Excluir">
                                 <span class="material-icons">delete</span>
                             </button>
@@ -3464,7 +3082,7 @@
                     <div style="text-align: center; padding: 40px;">
                         <span class="material-icons" style="font-size: 48px; color: var(--wsnet-border); opacity: 0.5;">group</span>
                         <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhum colaborador encontrado</h3>
-                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' || document.getElementById('filtroStatusColaboradores').value !== 'ativos' ? 'Tente mudar os filtros de empresa, cidade ou status.' : 'Clique em "Novo Colaborador" para começar.'}</p>
+                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' ? 'Tente mudar os filtros de empresa ou cidade.' : 'Clique em "Novo Colaborador" para começar.'}</p>
                     </div>
                 `;
             }
@@ -3481,7 +3099,6 @@
             document.getElementById('modalColaboradorTitulo').textContent = 'Cadastrar Colaborador';
             document.getElementById('btnSalvarColaborador').innerHTML = '<span class="material-icons">save</span> Salvar';
             document.getElementById('colaboradorId').value = '';
-            document.getElementById('statusColaborador').value = 'ativo';
             
             const db = new LocalDatabase();
             const departamentos = db.getDepartamentos();
@@ -3526,7 +3143,6 @@
             carregarEmpresasSelect();
             document.getElementById('empresaColaborador').value = colaborador.empresa || '';
             document.getElementById('cidadeColaborador').value = colaborador.cidade || '';
-            document.getElementById('statusColaborador').value = colaborador.status || 'ativo';
             
             dependentesEditando = [...(colaborador.dependentes || [])];
             modoEdicao = true;
@@ -3534,33 +3150,6 @@
             atualizarListaDependentes();
             mostrarAbaDependentes('lista');
             openModal('modalColaborador');
-        }
-
-        async function alternarStatusColaborador(colaboradorId, novoStatus) {
-            const colaborador = colaboradoresLista.find(c => c.id === colaboradorId);
-            if (!colaborador) return;
-            
-            const statusAtual = colaborador.status;
-            const novoStatusText = novoStatus === 'ativo' ? 'ativar' : 'inativar';
-            
-            if (!confirm(`Tem certeza que deseja ${novoStatusText} o colaborador "${colaborador.nome}"?\n\nColaboradores inativos não aparecem na lista de retiradas pendentes.`)) {
-                return;
-            }
-            
-            const sucesso = await alternarStatusColaboradorFirebase(colaboradorId, novoStatus);
-            if (sucesso) {
-                // Atualizar a lista local
-                colaborador.status = novoStatus;
-                
-                // Atualizar a interface
-                if (document.getElementById('colaboradores').classList.contains('active')) {
-                    carregarColaboradores();
-                }
-                if (document.getElementById('retirada').classList.contains('active')) {
-                    carregarRetirada();
-                }
-                carregarDashboard();
-            }
         }
 
         function excluirColaborador(colaboradorId) {
@@ -3825,8 +3414,8 @@
                     mes: mesAtual,
                     mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
                     totalRetiradas: retiradasLista.length,
-                    totalColaboradores: colaboradoresLista.filter(c => c.status === 'ativo').length,
-                    percentual: colaboradoresLista.filter(c => c.status === 'ativo').length > 0 ? ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo').length) * 100).toFixed(1) : 0,
+                    totalColaboradores: colaboradoresLista.length,
+                    percentual: colaboradoresLista.length > 0 ? ((retiradasLista.length / colaboradoresLista.length) * 100).toFixed(1) : 0,
                     dataEncerramento: new Date().toISOString(),
                     realizadoPor: currentUser?.email || 'Sistema'
                 });
@@ -3853,7 +3442,7 @@
             ];
             const mesFormatado = meses[parseInt(novoMes) - 1];
             
-            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! Todos os colaboradores ativos estão como PENDENTES para o novo mês.`, 'success');
+            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! Todos os colaboradores estão como PENDENTES para o novo mês.`, 'success');
             
             closeModal('modalNovoMes');
             
@@ -3921,14 +3510,13 @@
                 const anoSelecionado = document.getElementById('anoRelatorio').value;
                 const empresaSelecionada = document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = document.getElementById('cidadeRelatorio').value;
-                const statusSelecionado = document.getElementById('statusRelatorio').value;
                 
                 if (!mesSelecionado || !anoSelecionado) {
                     showAlert('Selecione o mês e ano para visualizar o relatório!', 'error');
                     return;
                 }
                 
-                await carregarRelatorio(null, empresaSelecionada, cidadeSelecionada, statusSelecionado);
+                await carregarRelatorio(null, empresaSelecionada, cidadeSelecionada);
             } catch (erro) {
                 console.error("Erro ao carregar relatório manual:", erro);
                 showAlert('Erro ao carregar relatório. Verifique os filtros e tente novamente.', 'error');
@@ -3960,12 +3548,11 @@
             }
         }
 
-        async function carregarRelatorio(mesParam = null, empresaParam = null, cidadeParam = null, statusParam = null) {
+        async function carregarRelatorio(mesParam = null, empresaParam = null, cidadeParam = null) {
             try {
                 const mesSelecionado = mesParam || `${document.getElementById('anoRelatorio').value}-${document.getElementById('mesRelatorio').value}`;
                 const empresaSelecionada = empresaParam || document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = cidadeParam || document.getElementById('cidadeRelatorio').value;
-                const statusSelecionado = statusParam || document.getElementById('statusRelatorio').value;
                 
                 if (!mesSelecionado || mesSelecionado === 'undefined-undefined') {
                     showAlert('Selecione um mês e ano válidos!', 'error');
@@ -3980,13 +3567,8 @@
                 // Carregar retiradas do mês selecionado
                 const retiradasMes = await carregarRetiradasPorMes(mesSelecionado);
                 
-                // Filtrar colaboradores por status
+                // Filtrar colaboradores
                 let colaboradoresFiltrados = [...colaboradoresLista];
-                if (statusSelecionado === 'ativos') {
-                    colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.status === 'ativo');
-                }
-                
-                // Aplicar filtros de empresa e cidade
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
                 }
@@ -4037,6 +3619,7 @@
                 // Atualizar listas
                 atualizarListaRetirados(jaRetiraram, retiradasFiltradas);
                 atualizarListaNaoRetiraram(naoRetiraram);
+                atualizarHistoricoRetiradas(retiradasFiltradas);
                 
                 // Atualizar título
                 const cardTitle = document.querySelector('#relatorios .card-title');
@@ -4068,7 +3651,6 @@
                                     ${colab.empresa ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.empresa}</span>` : ''}
                                     ${colab.cidade ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.cidade}</span>` : ''}
                                     ${colab.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.departamento}</span>` : ''}
-                                    ${colab.status === 'inativo' ? `<span style="background: rgba(255, 51, 51, 0.1); color: var(--wsnet-danger); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">Inativo</span>` : ''}
                                 </div>
                                 ${retiradaDoColab ? `
                                     <button style="padding: 4px 8px; font-size: 12px; background: transparent; border: 1px solid var(--wsnet-primary); color: var(--wsnet-primary); border-radius: var(--radius-sm); cursor: pointer;" onclick="verDetalhesRetirada('${retiradaDoColab.id}')">
@@ -4110,7 +3692,6 @@
                         ${colab.empresa ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.empresa}</span>` : ''}
                         ${colab.cidade ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.cidade}</span>` : ''}
                         ${colab.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.departamento}</span>` : ''}
-                        ${colab.status === 'inativo' ? `<span style="background: rgba(255, 51, 51, 0.1); color: var(--wsnet-danger); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">Inativo</span>` : ''}
                     </div>
                 `).join('');
             } else {
@@ -4125,15 +3706,55 @@
             }
         }
 
+        function atualizarHistoricoRetiradas(retiradasFiltradas) {
+            const containerHistorico = document.getElementById('historicoRetiradas');
+            
+            if (retiradasFiltradas.length > 0) {
+                // Ordenar por data mais recente
+                retiradasFiltradas.sort((a, b) => new Date(b.dataRetirada) - new Date(a.dataRetirada));
+                
+                containerHistorico.innerHTML = retiradasFiltradas.map((retirada, index) => {
+                    const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
+                    return `
+                        <div style="padding: 12px 0; border-bottom: 1px solid var(--wsnet-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span class="material-icons" style="font-size: 16px; color: var(--wsnet-primary); vertical-align: middle; margin-right: 8px;">shopping_cart</span>
+                                    <strong>${retirada.colaboradorTitularNome}</strong>
+                                    ${colaborador ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colaborador.empresa}</span>` : ''}
+                                    ${colaborador ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colaborador.cidade}</span>` : ''}
+                                </div>
+                                <span style="font-size: 12px; color: var(--wsnet-text-medium);">
+                                    ${new Date(retirada.dataRetirada).toLocaleDateString('pt-BR')}
+                                </span>
+                            </div>
+                            <div style="margin-left: 24px; font-size: 13px; color: var(--wsnet-text-medium); margin-top: 8px;">
+                                Retirado por: ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo}) • 
+                                Hora: ${new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                                <br>
+                                <small>Registrado por: ${retirada.createdBy || currentUser?.email || 'Sistema'}</small>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                containerHistorico.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <span class="material-icons" style="font-size: 36px; color: var(--wsnet-border); opacity: 0.5;">info</span>
+                        <p style="color: var(--wsnet-text-light); margin-top: 12px;">
+                            Nenhuma retirada registrada no período.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
         // ==================== DETALHES DA RETIRADA ====================
         function verDetalhesRetirada(retiradaId) {
             const retirada = retiradasLista.find(r => r.id === retiradaId);
             const colaborador = retirada ? colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId) : null;
             
             if (!retirada) return;
-
-            // Armazenar a retirada atual para possível reversão
-            retiradaParaReverter = retirada;
 
             const detalhes = `
                 <div style="padding: 10px 0;">
@@ -4153,12 +3774,6 @@
                         <div style="margin-bottom: 15px;">
                             <strong>Departamento:</strong><br>
                             ${colaborador.departamento}
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <strong>Status:</strong><br>
-                            ${colaborador.status === 'ativo' ? 
-                                '<span style="color: var(--wsnet-success);">Ativo</span>' : 
-                                '<span style="color: var(--wsnet-danger);">Inativo</span>'}
                         </div>
                     ` : ''}
                     <div style="margin-bottom: 15px;">
@@ -4186,13 +3801,6 @@
 
             document.getElementById('detalhesRetiradaConteudo').innerHTML = detalhes;
             openModal('modalDetalhesRetirada');
-        }
-
-        function verDetalhesRetiradaColaborador(colaboradorId) {
-            const retirada = retiradasLista.find(r => r.colaboradorTitularId === colaboradorId);
-            if (retirada) {
-                verDetalhesRetirada(retirada.id);
-            }
         }
 
         // ==================== EXPORTAÇÃO DE COLABORADORES ====================
@@ -4227,7 +3835,6 @@
                 
                 const empresaFiltro = document.getElementById('filtroEmpresaColaboradores').value;
                 const cidadeFiltro = document.getElementById('filtroCidadeColaboradores').value;
-                const statusFiltro = document.getElementById('filtroStatusColaboradores').value;
                 const buscaFiltro = document.getElementById('searchColaborador').value;
                 
                 doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, currentY);
@@ -4237,7 +3844,6 @@
                 let filtrosInfo = '';
                 if (empresaFiltro !== 'todas') filtrosInfo += `Empresa: ${empresaFiltro} `;
                 if (cidadeFiltro !== 'todas') filtrosInfo += `Cidade: ${cidadeFiltro} `;
-                if (statusFiltro !== 'ativos') filtrosInfo += `Status: ${statusFiltro} `;
                 if (buscaFiltro) filtrosInfo += `Busca: "${buscaFiltro}"`;
                 
                 if (filtrosInfo) {
@@ -4248,7 +3854,7 @@
                 }
                 
                 // Cabeçalho da tabela
-                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Status', 'Dependentes', 'Data Cadastro']];
+                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Dependentes', 'Data Cadastro']];
                 
                 // Dados da tabela
                 const data = colaboradoresFiltrados.map((colab, index) => [
@@ -4257,7 +3863,6 @@
                     colab.empresa || '',
                     colab.cidade || '',
                     colab.departamento || '',
-                    colab.status === 'ativo' ? 'Ativo' : 'Inativo',
                     (colab.dependentes?.length || 0).toString(),
                     colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : 'N/A'
                 ]);
@@ -4276,9 +3881,8 @@
                         2: { cellWidth: 40 }, // Empresa
                         3: { cellWidth: 30 }, // Cidade
                         4: { cellWidth: 40 }, // Departamento
-                        5: { cellWidth: 25 }, // Status
-                        6: { cellWidth: 25 }, // Dependentes
-                        7: { cellWidth: 30 }  // Data
+                        5: { cellWidth: 25 }, // Dependentes
+                        6: { cellWidth: 30 }  // Data
                     }
                 });
                 
@@ -4324,7 +3928,6 @@
                 // Obter informações dos filtros
                 const empresaFiltro = document.getElementById('filtroEmpresaColaboradores').value;
                 const cidadeFiltro = document.getElementById('filtroCidadeColaboradores').value;
-                const statusFiltro = document.getElementById('filtroStatusColaboradores').value;
                 const buscaFiltro = document.getElementById('searchColaborador').value;
                 
                 // Preparar dados
@@ -4338,7 +3941,6 @@
                         'Empresa': colab.empresa || '',
                         'Cidade': colab.cidade || '',
                         'Departamento': colab.departamento || '',
-                        'Status': colab.status === 'ativo' ? 'Ativo' : 'Inativo',
                         'Total Dependentes': dependentes.length,
                         'Dependentes': dependentesStr,
                         'Data Cadastro': colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : '',
@@ -4351,11 +3953,10 @@
                 const ws = XLSX.utils.json_to_sheet(dados);
                 
                 // Adicionar informações de filtro como metadados
-                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || statusFiltro !== 'ativos' || buscaFiltro) {
+                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || buscaFiltro) {
                     const infoFiltros = [];
                     if (empresaFiltro !== 'todas') infoFiltros.push(`Empresa: ${empresaFiltro}`);
                     if (cidadeFiltro !== 'todas') infoFiltros.push(`Cidade: ${cidadeFiltro}`);
-                    if (statusFiltro !== 'ativos') infoFiltros.push(`Status: ${statusFiltro}`);
                     if (buscaFiltro) infoFiltros.push(`Busca: "${buscaFiltro}"`);
                     
                     const infoRow = [
@@ -4376,7 +3977,6 @@
                     { wch: 20 },  // Empresa
                     { wch: 15 },  // Cidade
                     { wch: 20 },  // Departamento
-                    { wch: 10 },  // Status
                     { wch: 15 },  // Total Dependentes
                     { wch: 40 },  // Dependentes
                     { wch: 15 },  // Data Cadastro
@@ -4404,7 +4004,6 @@
                 const anoSelecionado = document.getElementById('anoRelatorio').value;
                 const empresaSelecionada = document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = document.getElementById('cidadeRelatorio').value;
-                const statusSelecionado = document.getElementById('statusRelatorio').value;
                 
                 if (!mesSelecionado || !anoSelecionado) {
                     showAlert('Selecione o mês e ano para exportar!', 'error');
@@ -4444,8 +4043,6 @@
                 currentY += 7;
                 doc.text(`Cidade: ${cidadeSelecionada === 'todas' ? 'Todas' : cidadeSelecionada}`, marginLeft, currentY);
                 currentY += 7;
-                doc.text(`Status: ${statusSelecionado === 'ativos' ? 'Apenas Ativos' : 'Todos'}`, marginLeft, currentY);
-                currentY += 7;
                 doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, marginLeft, currentY);
                 currentY += 15;
                 
@@ -4472,9 +4069,6 @@
                 
                 // Filtrar colaboradores
                 let colaboradoresFiltrados = [...colaboradoresLista];
-                if (statusSelecionado === 'ativos') {
-                    colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.status === 'ativo');
-                }
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
                 }
@@ -4559,13 +4153,69 @@
                             currentY = marginTop;
                         }
                         
-                        doc.text(`${count}. ${colab.nome} - ${colab.empresa || ''} - ${colab.departamento || ''} ${colab.status === 'inativo' ? '(Inativo)' : ''}`, marginLeft, currentY);
+                        doc.text(`${count}. ${colab.nome} - ${colab.empresa || ''} - ${colab.departamento || ''}`, marginLeft, currentY);
                         currentY += 6;
                         count++;
                     }
                 } else {
                     doc.setFontSize(10);
                     doc.text('Todos os colaboradores retiraram neste período.', marginLeft, currentY);
+                    currentY += 10;
+                }
+                
+                currentY += 10;
+                
+                // Verificar se precisa de nova página
+                if (currentY > pageHeight - 50) {
+                    doc.addPage();
+                    currentY = marginTop;
+                }
+                
+                // Seção 3: Histórico de Retiradas
+                doc.setFontSize(14);
+                doc.text('HISTÓRICO DE RETIRADAS', marginLeft, currentY);
+                currentY += 10;
+                
+                if (retiradasFiltradas.length > 0) {
+                    // Ordenar por data mais recente
+                    retiradasFiltradas.sort((a, b) => new Date(b.dataRetirada) - new Date(a.dataRetirada));
+                    
+                    doc.setFontSize(9);
+                    let count = 1;
+                    
+                    for (const retirada of retiradasFiltradas) {
+                        if (currentY > pageHeight - 20) {
+                            doc.addPage();
+                            currentY = marginTop;
+                        }
+                        
+                        const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
+                        const dataFormatada = new Date(retirada.dataRetirada).toLocaleDateString('pt-BR');
+                        const horaFormatada = new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        
+                        doc.text(`${count}. ${dataFormatada} ${horaFormatada} - ${retirada.colaboradorTitularNome}`, marginLeft, currentY);
+                        currentY += 5;
+                        doc.text(`   Retirado por: ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo})`, marginLeft + 5, currentY);
+                        currentY += 5;
+                        
+                        if (colaborador) {
+                            doc.text(`   Empresa: ${colaborador.empresa || ''} - Cidade: ${colaborador.cidade || ''}`, marginLeft + 5, currentY);
+                            currentY += 5;
+                        }
+                        
+                        currentY += 3;
+                        count++;
+                        
+                        // Limitar a 30 registros por página para não sobrecarregar
+                        if (count > 30) {
+                            doc.addPage();
+                            currentY = marginTop;
+                            count = 1;
+                        }
+                    }
+                } else {
+                    doc.setFontSize(10);
+                    doc.text('Nenhuma retirada registrada no período.', marginLeft, currentY);
                     currentY += 10;
                 }
                 
@@ -4601,7 +4251,6 @@
                 const anoSelecionado = document.getElementById('anoRelatorio').value;
                 const empresaSelecionada = document.getElementById('empresaRelatorio').value;
                 const cidadeSelecionada = document.getElementById('cidadeRelatorio').value;
-                const statusSelecionado = document.getElementById('statusRelatorio').value;
                 
                 showAlert('Funcionalidade em desenvolvimento!', 'info');
                 
@@ -4729,32 +4378,8 @@
                 const usuarios = db.getUsuarios();
                 console.log(`Total de usuários no sistema: ${usuarios.length}`);
                 
-                // Verificar se há usuário logado no localStorage
-                const usuarioLogado = db.getUsuarioLogado();
-                if (usuarioLogado) {
-                    console.log('Usuário logado encontrado no localStorage:', usuarioLogado.nome);
-                    // Fazer login automático
-                    currentUser = usuarioLogado;
-                    
-                    // IMPORTANTE: Carregar o mês atual do localStorage
-                    mesAtual = db.getMesAtual();
-                    console.log('Mês atual carregado do localStorage:', mesAtual);
-                    
-                    document.getElementById('userName').textContent = usuarioLogado.nome;
-                    document.getElementById('userRole').textContent = usuarioLogado.role === 'admin' ? 'Admin' : 'Registrador';
-                    document.getElementById('userRole').className = 'user-role';
-                    
-                    setupUserPermissions();
-                    showMainApp();
-                    showAlert(`Bem-vindo de volta, ${usuarioLogado.nome}!`, 'success');
-                } else {
-                    console.log('Nenhum usuário logado encontrado, exibindo tela de login.');
-                    showLoginScreen();
-                }
-                
             } catch (error) {
                 console.error('Erro ao inicializar banco de dados:', error);
-                showLoginScreen();
             }
             
             const loginForm = document.getElementById('loginForm');
@@ -4786,7 +4411,7 @@
             
             // Fechar modal ao clicar no overlay
             document.addEventListener('click', function(event) {
-                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalNovoMes', 'modalRetirada', 'modalDetalhesRetirada', 'modalLimparRetiradas', 'modalReverterRetirada', 'confirmacaoRetirada'];
+                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalNovoMes', 'modalRetirada', 'modalDetalhesRetirada', 'modalLimparRetiradas', 'confirmacaoRetirada'];
                 modals.forEach(modalId => {
                     const modal = document.getElementById(modalId);
                     if (modal && modal.style.display === 'block' && event.target === modal) {
