@@ -377,6 +377,8 @@
         .stat-icon.pending { background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); }
         .stat-icon.percentage { background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); }
         .stat-icon.company { background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); }
+        .stat-icon.dentro-prazo { background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); }
+        .stat-icon.fora-prazo { background: rgba(255, 51, 51, 0.1); color: var(--wsnet-danger); }
 
         .stat-value {
             font-size: 36px;
@@ -557,6 +559,16 @@
             color: var(--wsnet-text-light);
         }
 
+        .badge-dentro-prazo {
+            background: rgba(0, 204, 102, 0.1);
+            color: var(--wsnet-success);
+        }
+
+        .badge-fora-prazo {
+            background: rgba(255, 51, 51, 0.1);
+            color: var(--wsnet-danger);
+        }
+
         /* Charts */
         .chart-container {
             background: var(--wsnet-bg-card);
@@ -582,11 +594,37 @@
             background: var(--wsnet-bg-card);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
+            flex-wrap: wrap;
         }
 
         .filter-group {
             flex: 1;
             min-width: 200px;
+        }
+
+        /* Configurações de Prazo */
+        .config-prazo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .dias-semana {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .dia-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--wsnet-bg-light);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--wsnet-border);
         }
 
         /* Modals */
@@ -884,6 +922,10 @@
             .chart-container canvas {
                 max-height: 250px;
             }
+            
+            .config-prazo-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Small Mobile */
@@ -954,11 +996,6 @@
                 font-size: 16px;
                 min-height: 44px;
             }
-        }
-
-        /* Estilos para filtro de status */
-        .filter-group select option {
-            padding: 8px;
         }
     </style>
 </head>
@@ -1047,6 +1084,10 @@
                     <a href="javascript:void(0)" class="menu-item" onclick="openGerenciarEmpresas()">
                         <span class="material-icons">apartment</span>
                         <span>Empresas</span>
+                    </a>
+                    <a href="javascript:void(0)" class="menu-item" onclick="openConfigurarPrazo()">
+                        <span class="material-icons">schedule</span>
+                        <span>Configurar Prazo</span>
                     </a>
                 </div>
 
@@ -1162,18 +1203,50 @@
                             <div class="stat-value" id="percentualRetirado">0%</div>
                             <div class="stat-label">Percentual Retirado (Ativos)</div>
                         </div>
+                        
+                        <div class="card stat-card">
+                            <div class="stat-icon dentro-prazo">
+                                <span class="material-icons">check_circle</span>
+                            </div>
+                            <div class="stat-value" id="dentroPrazo">0</div>
+                            <div class="stat-label">Dentro do Prazo</div>
+                        </div>
+                        
+                        <div class="card stat-card">
+                            <div class="stat-icon fora-prazo">
+                                <span class="material-icons">warning</span>
+                            </div>
+                            <div class="stat-value" id="foraPrazo">0</div>
+                            <div class="stat-label">Fora do Prazo</div>
+                        </div>
                     </div>
 
-                    <!-- Gráfico -->
+                    <!-- Gráfico de Status -->
                     <div class="chart-container">
                         <div class="chart-header">
                             <h3 class="card-title">
                                 <span class="material-icons">pie_chart</span>
-                                Status das Retiradas (Apenas Ativos)
+                                Status das Retiradas
                             </h3>
                         </div>
                         <div style="height: 300px;">
                             <canvas id="chartStatus"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de Conformidade com Prazo -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3 class="card-title">
+                                <span class="material-icons">schedule</span>
+                                Conformidade com Prazo
+                            </h3>
+                            <div style="font-size: 14px; color: var(--wsnet-text-medium);" id="prazoInfo">
+                                Prazo: 3 dias úteis das 08:00 às 18:00
+                            </div>
+                        </div>
+                        <div style="height: 300px;">
+                            <canvas id="chartPrazo"></canvas>
                         </div>
                     </div>
 
@@ -1195,7 +1268,7 @@
                         </div>
                     </div>
 
-                    <!-- Últimas Retiradas -->
+                    <!-- Últimas Retiradas com Indicador de Prazo -->
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">
@@ -1222,6 +1295,10 @@
                                 <span class="material-icons">shopping_cart</span>
                                 Retiradas Pendentes (Apenas Colaboradores Ativos)
                             </h3>
+                            <div id="prazoInfoRetirada" style="font-size: 13px; background: rgba(0, 102, 204, 0.1); padding: 8px 12px; border-radius: var(--radius-md); color: var(--wsnet-primary-dark);">
+                                <span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span>
+                                Prazo: 3 dias úteis das 08:00 às 18:00
+                            </div>
                         </div>
                         
                         <div class="filters-bar">
@@ -1391,11 +1468,11 @@
                                 </select>
                             </div>
                             <div class="filter-group">
-                                <label class="form-label">Filtrar por Status:</label>
-                                <select class="form-control" id="statusRelatorio" onchange="filtrarRelatorioPorStatus()">
-                                    <option value="todos">Todos os Status</option>
-                                    <option value="retirados">Apenas Retirados</option>
-                                    <option value="pendentes">Apenas Pendentes</option>
+                                <label class="form-label">Conformidade:</label>
+                                <select class="form-control" id="conformidadeRelatorio" onchange="filtrarRelatorioPorConformidade()">
+                                    <option value="todos">Todos</option>
+                                    <option value="dentro">Dentro do Prazo</option>
+                                    <option value="fora">Fora do Prazo</option>
                                 </select>
                             </div>
                             <div class="filter-group" style="align-self: flex-end;">
@@ -1432,11 +1509,27 @@
                             </div>
                             
                             <div class="card stat-card">
-                                <div class="stat-icon company">
-                                    <span class="material-icons">location_city</span>
+                                <div class="stat-icon dentro-prazo">
+                                    <span class="material-icons">check_circle</span>
                                 </div>
-                                <div class="stat-value" id="relatorioCidade">Todas</div>
-                                <div class="stat-label">Cidade Selecionada</div>
+                                <div class="stat-value" id="relatorioDentroPrazo">0</div>
+                                <div class="stat-label">Dentro do Prazo</div>
+                            </div>
+                            
+                            <div class="card stat-card">
+                                <div class="stat-icon fora-prazo">
+                                    <span class="material-icons">warning</span>
+                                </div>
+                                <div class="stat-value" id="relatorioForaPrazo">0</div>
+                                <div class="stat-label">Fora do Prazo</div>
+                            </div>
+                            
+                            <div class="card stat-card">
+                                <div class="stat-icon percentage">
+                                    <span class="material-icons">trending_up</span>
+                                </div>
+                                <div class="stat-value" id="relatorioConformidade">0%</div>
+                                <div class="stat-label">Taxa de Conformidade</div>
                             </div>
                         </div>
 
@@ -1670,6 +1763,89 @@
         </div>
     </div>
 
+    <!-- Modal Configurar Prazo -->
+    <div id="modalConfigurarPrazo" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Configurar Prazo de Retirada</h3>
+                <span class="material-icons" style="cursor: pointer;" onclick="closeModal('modalConfigurarPrazo')">close</span>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" style="display: block; margin-bottom: 20px;">
+                    <span class="material-icons" style="vertical-align: middle;">info</span>
+                    Configure os dias e horários permitidos para retirada. O sistema NÃO bloqueará retiradas fora do prazo, apenas registrará se estão dentro ou fora.
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Dias da Semana Permitidos:</label>
+                    <div class="dias-semana">
+                        <label class="dia-checkbox">
+                            <input type="checkbox" id="diaSegunda" value="1" checked> Segunda
+                        </label>
+                        <label class="dia-checkbox">
+                            <input type="checkbox" id="diaTerca" value="2" checked> Terça
+                        </label>
+                        <label class="dia-checkbox">
+                            <input type="checkbox" id="diaQuarta" value="3" checked> Quarta
+                        </label>
+                        <label class="dia-checkbox">
+                            <input type="checkbox" id="diaQuinta" value="4" checked> Quinta
+                        </label>
+                        <label class="dia-checkbox">
+                            <input type="checkbox" id="diaSexta" value="5" checked> Sexta
+                        </label>
+                        <label class="dia-checkbox">
+                            <input type="checkbox" id="diaSabado" value="6"> Sábado
+                        </label>
+                        <label class="dia-checkbox">
+                            <input type="checkbox" id="diaDomingo" value="0"> Domingo
+                        </label>
+                    </div>
+                </div>
+
+                <div class="config-prazo-grid">
+                    <div class="form-group">
+                        <label class="form-label">Horário Início:</label>
+                        <input type="time" class="form-control" id="horaInicio" value="08:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Horário Fim:</label>
+                        <input type="time" class="form-control" id="horaFim" value="18:00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Dias para Retirada (após início do mês):</label>
+                    <select class="form-control" id="diasRetirada">
+                        <option value="1">1 dia</option>
+                        <option value="2">2 dias</option>
+                        <option value="3" selected>3 dias</option>
+                        <option value="4">4 dias</option>
+                        <option value="5">5 dias</option>
+                        <option value="6">6 dias</option>
+                        <option value="7">7 dias</option>
+                        <option value="10">10 dias</option>
+                        <option value="15">15 dias</option>
+                        <option value="30">30 dias</option>
+                    </select>
+                    <small style="color: var(--wsnet-text-medium);">Dias corridos a partir do 1º dia do mês</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Considerar Apenas Dias Úteis:</label>
+                    <select class="form-control" id="considerarDiasUteis">
+                        <option value="sim">Sim (contar apenas dias úteis)</option>
+                        <option value="nao">Não (contar todos os dias)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalConfigurarPrazo')">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarConfiguracaoPrazo()">Salvar Configuração</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Iniciar Novo Mês -->
     <div id="modalNovoMes" class="modal">
         <div class="modal-content">
@@ -1824,7 +2000,7 @@
     </div>
 
     <script>
-        // ==================== SISTEMA COMPLETO ====================
+        // ==================== SISTEMA COMPLETO COM CONTROLE DE PRAZO ====================
         let currentUser = null;
         let colaboradorSelecionado = null;
         let dependentesEditando = [];
@@ -1846,8 +2022,16 @@
             retiradas: []
         };
         
-        // IMPORTANTE: Agora o mês atual é carregado do localStorage sempre que o sistema inicia
-        let mesAtual = null; // Será carregado após login
+        // Configuração de prazo
+        let configuracaoPrazo = {
+            diasPermitidos: [1, 2, 3, 4, 5], // Segunda a sexta
+            horaInicio: '08:00',
+            horaFim: '18:00',
+            diasRetirada: 3,
+            considerarDiasUteis: true
+        };
+        
+        let mesAtual = null;
 
         // ==================== GERENCIAMENTO DE SESSÃO ====================
         function salvarSessaoUsuario(usuario) {
@@ -1901,6 +2085,10 @@
                     }));
                 }
                 
+                if (!localStorage.getItem('configuracaoPrazo')) {
+                    localStorage.setItem('configuracaoPrazo', JSON.stringify(configuracaoPrazo));
+                }
+                
                 if (!localStorage.getItem('historicoRetiradas')) {
                     localStorage.setItem('historicoRetiradas', JSON.stringify([]));
                 }
@@ -1916,7 +2104,6 @@
                         role: 'admin',
                         nome: 'Administrador'
                     },
-                    // 7 usuários com acesso apenas às retiradas (role 'registrador')
                     {
                         email: 'vinicius.mekacheski@email.com',
                         senha: 'wsnet1205',
@@ -1971,10 +2158,8 @@
                     }
                 }
                 
-                // Remover o usuário antigo 'retirada@email.com' se existir
                 usuarios = usuarios.filter(u => u.email !== 'retirada@email.com');
                 
-                // Adicionar os novos usuários se não existirem
                 usuariosPadrao.forEach(usuarioPadrao => {
                     const existe = usuarios.find(u => u.email.toLowerCase() === usuarioPadrao.email.toLowerCase());
                     if (!existe) {
@@ -1994,7 +2179,7 @@
                 const config = this.getConfig();
                 config.mesAtual = mes;
                 localStorage.setItem('config', JSON.stringify(config));
-                mesAtual = mes; // Atualiza a variável global também
+                mesAtual = mes;
             }
 
             getConfig() {
@@ -2033,6 +2218,144 @@
                 return usuarios.find(u => {
                     return u.email.toLowerCase() === email && u.senha === senha;
                 });
+            }
+            
+            getConfiguracaoPrazo() {
+                try {
+                    const config = JSON.parse(localStorage.getItem('configuracaoPrazo'));
+                    if (config) return config;
+                } catch (error) {}
+                return configuracaoPrazo;
+            }
+            
+            setConfiguracaoPrazo(config) {
+                localStorage.setItem('configuracaoPrazo', JSON.stringify(config));
+                configuracaoPrazo = config;
+            }
+        }
+
+        // ==================== FUNÇÕES DE PRAZO ====================
+        function carregarConfiguracaoPrazo() {
+            const db = new LocalDatabase();
+            configuracaoPrazo = db.getConfiguracaoPrazo();
+            
+            // Atualizar informações na interface
+            const prazoInfo = document.getElementById('prazoInfo');
+            const prazoInfoRetirada = document.getElementById('prazoInfoRetirada');
+            
+            if (prazoInfo) {
+                prazoInfo.textContent = `Prazo: ${configuracaoPrazo.diasRetirada} dias ${configuracaoPrazo.considerarDiasUteis ? 'úteis' : 'corridos'} das ${configuracaoPrazo.horaInicio} às ${configuracaoPrazo.horaFim}`;
+            }
+            
+            if (prazoInfoRetirada) {
+                prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> Prazo: ${configuracaoPrazo.diasRetirada} dias ${configuracaoPrazo.considerarDiasUteis ? 'úteis' : 'corridos'} das ${configuracaoPrazo.horaInicio} às ${configuracaoPrazo.horaFim}`;
+            }
+        }
+
+        function verificarSeDentroDoPrazo(dataRetirada, mesReferencia) {
+            const data = new Date(dataRetirada);
+            
+            // 1. Verificar dia da semana
+            const diaSemana = data.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+            if (!configuracaoPrazo.diasPermitidos.includes(diaSemana)) {
+                return false;
+            }
+            
+            // 2. Verificar horário
+            const hora = data.getHours();
+            const minutos = data.getMinutes();
+            const [horaInicio, minInicio] = configuracaoPrazo.horaInicio.split(':').map(Number);
+            const [horaFim, minFim] = configuracaoPrazo.horaFim.split(':').map(Number);
+            
+            const minutosTotal = hora * 60 + minutos;
+            const minutosInicio = horaInicio * 60 + minInicio;
+            const minutosFim = horaFim * 60 + minFim;
+            
+            if (minutosTotal < minutosInicio || minutosTotal > minutosFim) {
+                return false;
+            }
+            
+            // 3. Verificar dias corridos desde o início do mês
+            const [ano, mes] = mesReferencia.split('-').map(Number);
+            const primeiroDiaMes = new Date(ano, mes - 1, 1);
+            
+            const diferencaDias = Math.floor((data - primeiroDiaMes) / (1000 * 60 * 60 * 24));
+            
+            if (configuracaoPrazo.considerarDiasUteis) {
+                // Contar apenas dias úteis
+                let diasUteis = 0;
+                let dataAtual = new Date(primeiroDiaMes);
+                
+                while (dataAtual < data) {
+                    const diaSemanaAtual = dataAtual.getDay();
+                    if (diaSemanaAtual !== 0 && diaSemanaAtual !== 6) { // Não é sábado nem domingo
+                        diasUteis++;
+                    }
+                    dataAtual.setDate(dataAtual.getDate() + 1);
+                }
+                
+                return diasUteis <= configuracaoPrazo.diasRetirada;
+            } else {
+                return diferencaDias <= configuracaoPrazo.diasRetirada;
+            }
+        }
+
+        function openConfigurarPrazo() {
+            // Carregar configuração atual nos campos
+            document.getElementById('horaInicio').value = configuracaoPrazo.horaInicio;
+            document.getElementById('horaFim').value = configuracaoPrazo.horaFim;
+            document.getElementById('diasRetirada').value = configuracaoPrazo.diasRetirada;
+            document.getElementById('considerarDiasUteis').value = configuracaoPrazo.considerarDiasUteis ? 'sim' : 'nao';
+            
+            // Marcar dias da semana
+            const dias = ['diaDomingo', 'diaSegunda', 'diaTerca', 'diaQuarta', 'diaQuinta', 'diaSexta', 'diaSabado'];
+            dias.forEach((dia, index) => {
+                const checkbox = document.getElementById(dia);
+                if (checkbox) {
+                    checkbox.checked = configuracaoPrazo.diasPermitidos.includes(index);
+                }
+            });
+            
+            openModal('modalConfigurarPrazo');
+        }
+
+        function salvarConfiguracaoPrazo() {
+            // Coletar dias permitidos
+            const diasPermitidos = [];
+            const dias = ['diaDomingo', 'diaSegunda', 'diaTerca', 'diaQuarta', 'diaQuinta', 'diaSexta', 'diaSabado'];
+            
+            dias.forEach((dia, index) => {
+                const checkbox = document.getElementById(dia);
+                if (checkbox && checkbox.checked) {
+                    diasPermitidos.push(index);
+                }
+            });
+            
+            if (diasPermitidos.length === 0) {
+                showAlert('Selecione pelo menos um dia da semana!', 'error');
+                return;
+            }
+            
+            const novaConfig = {
+                diasPermitidos: diasPermitidos,
+                horaInicio: document.getElementById('horaInicio').value,
+                horaFim: document.getElementById('horaFim').value,
+                diasRetirada: parseInt(document.getElementById('diasRetirada').value),
+                considerarDiasUteis: document.getElementById('considerarDiasUteis').value === 'sim'
+            };
+            
+            const db = new LocalDatabase();
+            db.setConfiguracaoPrazo(novaConfig);
+            
+            showAlert('Configuração de prazo salva com sucesso!', 'success');
+            closeModal('modalConfigurarPrazo');
+            
+            // Atualizar informações na interface
+            carregarConfiguracaoPrazo();
+            
+            // Recarregar dados para aplicar nova verificação
+            if (document.getElementById('dashboard').classList.contains('active')) {
+                carregarDashboard();
             }
         }
 
@@ -2088,7 +2411,7 @@
                 console.error('Erro ao iniciar escutas Firebase:', error);
             }
             
-            // Carregar dashboard com o mês atual persistido
+            carregarConfiguracaoPrazo();
             carregarDashboard();
             handleResize();
         }
@@ -2120,10 +2443,8 @@
                     if (usuario) {
                         currentUser = usuario;
                         
-                        // SALVAR SESSÃO APENAS NA SESSIONSTORAGE
                         salvarSessaoUsuario(usuario);
                         
-                        // IMPORTANTE: Carregar o mês atual do localStorage
                         mesAtual = db.getMesAtual();
                         console.log('Mês atual carregado do localStorage:', mesAtual);
                         
@@ -2384,12 +2705,10 @@
                 const { collection, addDoc, doc, updateDoc } = window.firebaseCollections;
                 
                 if (colaboradorId) {
-                    // Modo edição
                     const docRef = doc(db, "colaboradores", colaboradorId);
                     await updateDoc(docRef, colaboradorData);
                     showAlert('Colaborador atualizado com sucesso!', 'success');
                     
-                    // Atualizar automaticamente todas as abas após salvar
                     setTimeout(() => {
                         if (document.getElementById('dashboard').classList.contains('active')) {
                             carregarDashboard();
@@ -2405,13 +2724,11 @@
                         }
                     }, 100);
                 } else {
-                    // Novo colaborador
                     colaboradorData.createdAt = new Date().toISOString();
                     colaboradorData.createdBy = currentUser?.email || "Sistema";
                     await addDoc(collection(db, "colaboradores"), colaboradorData);
                     showAlert('Colaborador cadastrado com sucesso!', 'success');
                     
-                    // Atualizar automaticamente todas as abas após salvar
                     setTimeout(() => {
                         if (document.getElementById('dashboard').classList.contains('active')) {
                             carregarDashboard();
@@ -2448,7 +2765,6 @@
                 await deleteDoc(docRef);
                 showAlert('Colaborador excluído com sucesso!', 'success');
                 
-                // Atualizar automaticamente todas as abas após excluir
                 setTimeout(() => {
                     if (document.getElementById('dashboard').classList.contains('active')) {
                         carregarDashboard();
@@ -2494,7 +2810,6 @@
                     atualizarFiltrosEmpresa();
                     atualizarDistribuicaoCidade();
                     
-                    // Verificar qual aba está ativa e atualizar automaticamente
                     if (document.getElementById('dashboard').classList.contains('active')) {
                         carregarDashboard();
                     }
@@ -2572,7 +2887,6 @@
                     
                     retiradasLista = retiradasMes;
                     
-                    // Verificar qual aba está ativa e atualizar automaticamente
                     if (document.getElementById('dashboard').classList.contains('active')) {
                         carregarDashboard();
                     }
@@ -2767,7 +3081,6 @@
         function atualizarDepartamentosNosSelects() {
             if (departamentosLista.length === 0) return;
             
-            // Atualizar o select no modal de colaborador
             const deptoSelect = document.getElementById('departamentoColaborador');
             if (deptoSelect) {
                 let options = '<option value="">Selecione o departamento...</option>';
@@ -2967,22 +3280,18 @@
             
             let filtrados = [...colaboradoresLista];
             
-            // Aplicar filtro de empresa
             if (empresaSelecionada !== 'todas') {
                 filtrados = filtrados.filter(c => c.empresa === empresaSelecionada);
             }
             
-            // Aplicar filtro de cidade
             if (cidadeSelecionada !== 'todas') {
                 filtrados = filtrados.filter(c => c.cidade === cidadeSelecionada);
             }
             
-            // Aplicar filtro de status
             if (statusSelecionado !== 'todos') {
                 filtrados = filtrados.filter(c => c.status === statusSelecionado);
             }
             
-            // Aplicar filtro de busca
             if (search) {
                 filtrados = filtrados.filter(colaborador => 
                     colaborador.nome.toLowerCase().includes(search) ||
@@ -3019,7 +3328,6 @@
             const cidadeSelecionada = document.getElementById('filtroCidadeDashboard').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
             
-            // Apenas colaboradores ativos para cálculos do dashboard
             const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
             const colaboradoresInativos = colaboradoresFiltrados.filter(c => c.status === 'inativo');
             
@@ -3029,7 +3337,7 @@
                 
                 let empresaOk = empresaSelecionada === 'todas' || colaborador.empresa === empresaSelecionada;
                 let cidadeOk = cidadeSelecionada === 'todas' || colaborador.cidade === cidadeSelecionada;
-                let ativoOk = colaborador.status === 'ativo'; // Apenas ativos para retiradas
+                let ativoOk = colaborador.status === 'ativo';
                 
                 return empresaOk && cidadeOk && ativoOk;
             });
@@ -3038,13 +3346,19 @@
             const percentual = colaboradoresAtivos.length > 0 
                 ? ((retiradasFiltradas.length / colaboradoresAtivos.length) * 100).toFixed(1) 
                 : 0;
+            
+            // Calcular dentro/fora do prazo
+            const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazo(r.dataRetirada, mesAtual)).length;
+            const foraPrazo = retiradasFiltradas.length - dentroPrazo;
 
             document.getElementById('totalColaboradores').textContent = colaboradoresFiltrados.length;
             document.getElementById('ativosDashboard').textContent = colaboradoresAtivos.length;
             document.getElementById('pendentes').textContent = pendentes;
             document.getElementById('percentualRetirado').textContent = percentual + '%';
+            document.getElementById('dentroPrazo').textContent = dentroPrazo;
+            document.getElementById('foraPrazo').textContent = foraPrazo;
 
-            carregarGraficos(colaboradoresAtivos, retiradasFiltradas);
+            carregarGraficos(colaboradoresAtivos, retiradasFiltradas, dentroPrazo, foraPrazo);
             atualizarDistribuicaoCidade(colaboradoresAtivos, retiradasFiltradas);
 
             const ultimasRetiradas = retiradasFiltradas.slice(-5).reverse();
@@ -3053,6 +3367,11 @@
             if (ultimasRetiradas.length > 0) {
                 container.innerHTML = ultimasRetiradas.map(retirada => {
                     const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
+                    const dentroPrazo = verificarSeDentroDoPrazo(retirada.dataRetirada, mesAtual);
+                    const badgePrazo = dentroPrazo ? 
+                        '<span class="badge-dentro-prazo" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Dentro do Prazo</span>' : 
+                        '<span class="badge-fora-prazo" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Fora do Prazo</span>';
+                    
                     return `
                         <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border);" onclick="verDetalhesRetirada('${retirada.id}')">
                             <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
@@ -3067,7 +3386,10 @@
                                     ${new Date(retirada.dataRetirada).toLocaleDateString('pt-BR')} ${new Date(retirada.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
                                 </div>
                             </div>
-                            <span class="badge-success" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Concluída</span>
+                            <div style="display: flex; gap: 8px;">
+                                ${badgePrazo}
+                                <span class="badge-success" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Concluída</span>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -3125,7 +3447,7 @@
             container.innerHTML = distribuiçãoHTML;
         }
 
-        function carregarGraficos(colaboradoresAtivos, retiradasFiltradas) {
+        function carregarGraficos(colaboradoresAtivos, retiradasFiltradas, dentroPrazo, foraPrazo) {
             const retirados = retiradasFiltradas.length;
             const pendentes = colaboradoresAtivos.length - retirados;
 
@@ -3153,6 +3475,31 @@
                     }
                 }
             });
+            
+            const ctxPrazo = document.getElementById('chartPrazo').getContext('2d');
+            if (charts.prazo) charts.prazo.destroy();
+            
+            charts.prazo = new Chart(ctxPrazo, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Dentro do Prazo', 'Fora do Prazo'],
+                    datasets: [{
+                        data: [dentroPrazo, foraPrazo],
+                        backgroundColor: ['#00CC66', '#FF3333'],
+                        borderColor: ['#00CC66', '#FF3333'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
         }
 
         // ==================== RETIRADA ====================
@@ -3161,7 +3508,6 @@
             const cidadeSelecionada = document.getElementById('filtroCidadeRetirada').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
             
-            // Apenas colaboradores ATIVOS para retirada
             const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
             
             const retiradosIds = retiradasLista.map(r => r.colaboradorTitularId);
@@ -3200,7 +3546,7 @@
                     <div style="text-align: center; padding: 40px;">
                         <span class="material-icons" style="font-size: 48px; color: var(--wsnet-success);">check_circle</span>
                         <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Todas as cestas foram retiradas!</h3>
-                        <p style="color: var(--wsnet-text-medium;">Nenhum colaborador pendente para este mês.</p>
+                        <p style="color: var(--wsnet-text-medium);">Nenhum colaborador pendente para este mês.</p>
                     </div>
                 `;
             }
@@ -3287,13 +3633,14 @@
         async function confirmarRetirada() {
             if (!retiradaPendente) return;
             
-            // Verificar se é uma correção
             if (retiradaPendente.correcao) {
                 await confirmarCorrecaoRetirada();
                 return;
             }
 
             const { quemRetirouId, quemRetirouNome, quemRetirouTipo } = retiradaPendente;
+            
+            const dentroPrazo = verificarSeDentroDoPrazo(new Date().toISOString(), mesAtual);
             
             const retirada = {
                 colaboradorTitularId: colaboradorSelecionado.id,
@@ -3304,13 +3651,15 @@
                 dataRetirada: new Date().toISOString(),
                 mesReferencia: mesAtual,
                 confirmadoPor: currentUser?.nome || currentUser?.email || 'Registrador',
-                createdBy: currentUser?.email || 'Registrador'
+                createdBy: currentUser?.email || 'Registrador',
+                dentroDoPrazo: dentroPrazo
             };
 
             const sucesso = await registrarRetiradaFirebase(retirada);
             
             if (sucesso) {
-                showAlert(`Retirada registrada para ${colaboradorSelecionado.nome}! Retirante: ${quemRetirouNome}`);
+                const msgPrazo = dentroPrazo ? 'dentro do prazo' : 'fora do prazo';
+                showAlert(`Retirada registrada para ${colaboradorSelecionado.nome}! Retirante: ${quemRetirouNome} (${msgPrazo})`);
                 ultimaRetiradaRegistrada = retirada;
             } else {
                 showAlert('Erro ao registrar retirada. Tente novamente.', 'error');
@@ -3396,7 +3745,6 @@
             atualizarDepartamentosNosSelects();
             carregarEmpresasSelect();
             
-            // Definir status padrão como "ativo"
             document.getElementById('statusColaborador').value = 'ativo';
             
             dependentesEditando = [];
@@ -3632,7 +3980,6 @@
             
             const db = new LocalDatabase();
             
-            // Salvar histórico das retiradas do mês anterior
             if (retiradasLista.length > 0) {
                 const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
                 const [anoAntigo, mesAntigo] = mesAtual.split('-');
@@ -3641,10 +3988,15 @@
                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
                 ];
                 
+                const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazo(r.dataRetirada, mesAtual)).length;
+                
                 historico.push({
                     mes: mesAtual,
                     mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
                     totalRetiradas: retiradasLista.length,
+                    dentroPrazo: dentroPrazo,
+                    foraPrazo: retiradasLista.length - dentroPrazo,
+                    taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
                     totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo').length,
                     percentual: colaboradoresLista.filter(c => c.status === 'ativo').length > 0 ? 
                         ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo').length) * 100).toFixed(1) : 0,
@@ -3656,15 +4008,8 @@
                 localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
             }
             
-            // IMPORTANTE: Atualizar o mês atual no localStorage
-            // NÃO marcar cestas não retiradas como retiradas
-            // As retiradas do mês anterior permanecem no Firebase com o mesReferencia antigo
-            
             db.setMesAtual(novoMesCompleto);
-            mesAtual = novoMesCompleto; // Atualizar variável global
-            
-            // NÃO LIMPAR retiradas do Firebase - elas permanecem no histórico com o mês antigo
-            // O sistema agora filtrará automaticamente pelo novo mesAtual
+            mesAtual = novoMesCompleto;
             
             const meses = [
                 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -3676,15 +4021,8 @@
             
             closeModal('modalNovoMes');
             
-            // Atualizar todas as telas
-            // A lista de retiradas será atualizada automaticamente pela escuta do Firebase
-            // pois agora estamos filtrando por mesReferencia = mesAtual (novo mês)
-            
-            // Forçar atualização das listas
             if (escutaRetiradasAtiva) {
-                // A escuta já vai atualizar automaticamente
             } else {
-                // Recarregar retiradas manualmente
                 await carregarRetiradasDoFirebase();
             }
             
@@ -3692,7 +4030,6 @@
             carregarRetirada();
             carregarMesAnoAtual();
             
-            // Mostrar notificação explicativa
             setTimeout(() => {
                 showAlert('Lembrete: As cestas não retiradas do mês anterior NÃO foram marcadas como retiradas. Todos os colaboradores estão como PENDENTES para o novo mês.', 'info');
             }, 1000);
@@ -3724,7 +4061,6 @@
                 showAlert('Todas as retiradas foram limpas com sucesso!', 'success');
                 retiradasLista = [];
                 
-                // Salvar no histórico local
                 const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
                 historico.push({
                     data: new Date().toISOString(),
@@ -3733,7 +4069,6 @@
                 });
                 localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
                 
-                // Atualizar a interface
                 carregarDashboard();
                 carregarRetirada();
             } else {
@@ -3748,7 +4083,6 @@
             const colaborador = colaboradoresLista.find(c => c.id === colaboradorId);
             if (!colaborador) return;
             
-            // Buscar retirada existente para este colaborador no mês atual
             const retiradaExistente = retiradasLista.find(r => 
                 r.colaboradorTitularId === colaboradorId && 
                 r.mesReferencia === mesAtual
@@ -3759,7 +4093,6 @@
                 return;
             }
             
-            // Criar modal de correção
             const modalHTML = `
                 <div id="modalCorrecaoRetirada" class="modal">
                     <div class="modal-content">
@@ -3786,6 +4119,9 @@
                                 <p style="margin: 5px 0; color: var(--wsnet-text-medium);">
                                     <strong>Hora:</strong> ${new Date(retiradaExistente.dataRetirada).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
                                 </p>
+                                <p style="margin: 5px 0; color: var(--wsnet-text-medium);">
+                                    <strong>Dentro do prazo:</strong> ${retiradaExistente.dentroDoPrazo ? 'Sim' : 'Não'}
+                                </p>
                             </div>
                             
                             <h4 style="margin: 0 0 16px 0; color: var(--wsnet-primary-dark); font-size: 14px;">Selecione quem está retirando:</h4>
@@ -3807,12 +4143,10 @@
                 </div>
             `;
             
-            // Adicionar modal ao body
             if (!document.getElementById('modalCorrecaoRetirada')) {
                 document.body.insertAdjacentHTML('beforeend', modalHTML);
             }
             
-            // Listar autorizados
             const autorizados = [
                 {
                     id: colaborador.id,
@@ -3898,13 +4232,13 @@
             
             try {
                 const db = window.firebaseDb;
-                const { doc, deleteDoc } = window.firebaseCollections;
+                const { doc, deleteDoc, collection, addDoc } = window.firebaseCollections;
                 
-                // 1. Excluir o registro antigo
                 const docRefAntigo = doc(db, "retiradas", retiradaExistenteId);
                 await deleteDoc(docRefAntigo);
                 
-                // 2. Criar novo registro
+                const dentroPrazo = verificarSeDentroDoPrazo(new Date().toISOString(), mesAtual);
+                
                 const novaRetirada = {
                     colaboradorTitularId: colaboradorId,
                     colaboradorTitularNome: colaboradorNome,
@@ -3915,14 +4249,13 @@
                     mesReferencia: mesAtual,
                     confirmadoPor: currentUser?.nome || currentUser?.email || 'Registrador',
                     createdBy: currentUser?.email || 'Registrador',
+                    dentroDoPrazo: dentroPrazo,
                     correcao: true,
                     observacaoCorrecao: observacao,
                     correcaoRealizadaPor: currentUser?.email || 'Sistema',
                     dataCorrecao: new Date().toISOString()
                 };
                 
-                // 3. Salvar novo registro
-                const { collection, addDoc } = window.firebaseCollections;
                 await addDoc(collection(db, "retiradas"), novaRetirada);
                 
                 showAlert(`Correção realizada! Retirada atualizada para ${colaboradorNome}.`, 'success');
@@ -3987,27 +4320,31 @@
             }
         }
 
-        // ==================== FILTRAR RELATÓRIO POR STATUS ====================
-        function filtrarRelatorioPorStatus() {
-            const statusSelecionado = document.getElementById('statusRelatorio').value;
+        function filtrarRelatorioPorConformidade() {
+            const conformidadeSelecionada = document.getElementById('conformidadeRelatorio').value;
             
-            // Mostrar/esconder seções baseadas no filtro
-            const secoes = {
-                listaRetirados: statusSelecionado === 'pendentes' ? 'none' : 'block',
-                listaNaoRetiraram: statusSelecionado === 'retirados' ? 'none' : 'block'
-            };
+            const containerRetirados = document.getElementById('listaRetirados');
+            const containerPendentes = document.getElementById('listaNaoRetiraram');
             
-            document.getElementById('listaRetirados').parentElement.style.display = secoes.listaRetirados;
-            document.getElementById('listaNaoRetiraram').parentElement.style.display = secoes.listaNaoRetiraram;
-            
-            // Atualizar contadores
-            if (statusSelecionado === 'todos') {
+            if (conformidadeSelecionada === 'dentro') {
+                const dentroPrazo = relatorioAtual.retiradas.filter(r => r.dentroDoPrazo === true);
+                const colaboradoresDentroPrazo = dentroPrazo.map(r => {
+                    return colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
+                }).filter(c => c);
+                
+                atualizarListaRetirados(colaboradoresDentroPrazo, dentroPrazo);
+                document.getElementById('contadorRetirados').textContent = `(${colaboradoresDentroPrazo.length})`;
+            } else if (conformidadeSelecionada === 'fora') {
+                const foraPrazo = relatorioAtual.retiradas.filter(r => r.dentroDoPrazo === false);
+                const colaboradoresForaPrazo = foraPrazo.map(r => {
+                    return colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
+                }).filter(c => c);
+                
+                atualizarListaRetirados(colaboradoresForaPrazo, foraPrazo);
+                document.getElementById('contadorRetirados').textContent = `(${colaboradoresForaPrazo.length})`;
+            } else {
+                atualizarListaRetirados(relatorioAtual.jaRetiraram, relatorioAtual.retiradas);
                 document.getElementById('contadorRetirados').textContent = `(${relatorioAtual.jaRetiraram.length})`;
-                document.getElementById('contadorPendentes').textContent = `(${relatorioAtual.naoRetiraram.length})`;
-            } else if (statusSelecionado === 'retirados') {
-                document.getElementById('contadorRetirados').textContent = `(${relatorioAtual.jaRetiraram.length})`;
-            } else if (statusSelecionado === 'pendentes') {
-                document.getElementById('contadorPendentes').textContent = `(${relatorioAtual.naoRetiraram.length})`;
             }
         }
 
@@ -4022,15 +4359,12 @@
                     return;
                 }
                 
-                // Garantir que temos a lista de colaboradores
                 if (!colaboradoresLista || colaboradoresLista.length === 0) {
                     await carregarColaboradoresDoFirebase();
                 }
                 
-                // Carregar retiradas do mês selecionado
                 const retiradasMes = await carregarRetiradasPorMes(mesSelecionado);
                 
-                // Filtrar colaboradores (apenas ativos para relatórios de retirada)
                 let colaboradoresFiltrados = [...colaboradoresLista];
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
@@ -4039,44 +4373,44 @@
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.cidade === cidadeSelecionada);
                 }
                 
-                // Para relatório, considerar apenas colaboradores ATIVOS
                 const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
                 
-                // Filtrar retiradas pelos mesmos filtros de empresa e cidade
                 let retiradasFiltradas = retiradasMes.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                     if (!colaborador) return false;
                     
                     let empresaOk = empresaSelecionada === 'todas' || colaborador.empresa === empresaSelecionada;
                     let cidadeOk = cidadeSelecionada === 'todas' || colaborador.cidade === cidadeSelecionada;
-                    let ativoOk = colaborador.status === 'ativo'; // Apenas ativos para relatório
+                    let ativoOk = colaborador.status === 'ativo';
                     
                     return empresaOk && cidadeOk && ativoOk;
                 });
                 
-                // Cálculos
                 const totalColaboradores = colaboradoresAtivos.length;
                 const totalRetiradas = retiradasFiltradas.length;
                 const percentual = totalColaboradores > 0 
                     ? ((totalRetiradas / totalColaboradores) * 100).toFixed(1)
                     : 0;
                 
+                const dentroPrazo = retiradasFiltradas.filter(r => r.dentroDoPrazo === true).length;
+                const foraPrazo = retiradasFiltradas.length - dentroPrazo;
+                const taxaConformidade = retiradasFiltradas.length > 0 
+                    ? ((dentroPrazo / retiradasFiltradas.length) * 100).toFixed(1)
+                    : 0;
+                
                 const retiradosIds = [...new Set(retiradasFiltradas.map(r => r.colaboradorTitularId))];
                 const naoRetiraram = colaboradoresAtivos.filter(c => !retiradosIds.includes(c.id));
                 const jaRetiraram = colaboradoresAtivos.filter(c => retiradosIds.includes(c.id));
                 
-                // Ordenar
                 jaRetiraram.sort((a, b) => a.nome.localeCompare(b.nome));
                 naoRetiraram.sort((a, b) => a.nome.localeCompare(b.nome));
                 
-                // SALVAR DADOS DO RELATÓRIO ATUAL
                 relatorioAtual = {
                     jaRetiraram: [...jaRetiraram],
                     naoRetiraram: [...naoRetiraram],
                     retiradas: [...retiradasFiltradas]
                 };
                 
-                // Formatar mês para exibição
                 const meses = [
                     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -4084,24 +4418,19 @@
                 const [ano, mesNum] = mesSelecionado.split('-').map(Number);
                 const mesFormatado = `${meses[mesNum - 1]} de ${ano}`;
                 
-                // Atualizar estatísticas
                 document.getElementById('relatorioTotalColaboradores').textContent = totalColaboradores;
                 document.getElementById('relatorioTotalRetiradas').textContent = totalRetiradas;
                 document.getElementById('relatorioPercentual').textContent = percentual + '%';
-                document.getElementById('relatorioCidade').textContent = cidadeSelecionada === 'todas' ? 'Todas' : cidadeSelecionada;
+                document.getElementById('relatorioDentroPrazo').textContent = dentroPrazo;
+                document.getElementById('relatorioForaPrazo').textContent = foraPrazo;
+                document.getElementById('relatorioConformidade').textContent = taxaConformidade + '%';
                 
-                // Atualizar listas
                 atualizarListaRetirados(jaRetiraram, retiradasFiltradas);
                 atualizarListaNaoRetiraram(naoRetiraram);
                 
-                // Atualizar contadores
                 document.getElementById('contadorRetirados').textContent = `(${jaRetiraram.length})`;
                 document.getElementById('contadorPendentes').textContent = `(${naoRetiraram.length})`;
                 
-                // Aplicar filtro de status atual
-                filtrarRelatorioPorStatus();
-                
-                // Atualizar título
                 const cardTitle = document.querySelector('#relatorios .card-title');
                 if (cardTitle) {
                     let titulo = `Relatório - ${mesFormatado}`;
@@ -4122,6 +4451,10 @@
             if (jaRetiraram.length > 0) {
                 containerRetirados.innerHTML = jaRetiraram.map(colab => {
                     const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
+                    const badgePrazo = retiradaDoColab && retiradaDoColab.dentroDoPrazo ? 
+                        '<span class="badge-dentro-prazo" style="padding: 2px 8px; border-radius: 8px; font-size: 11px;">Dentro do Prazo</span>' : 
+                        '<span class="badge-fora-prazo" style="padding: 2px 8px; border-radius: 8px; font-size: 11px;">Fora do Prazo</span>';
+                    
                     return `
                         <div style="padding: 12px 0; border-bottom: 1px solid var(--wsnet-border);">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -4130,7 +4463,7 @@
                                     <strong>${colab.nome}</strong>
                                     ${colab.empresa ? `<span style="background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.empresa}</span>` : ''}
                                     ${colab.cidade ? `<span style="background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.cidade}</span>` : ''}
-                                    ${colab.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 2px 8px; border-radius: 8px; font-size: 11px; margin-left: 8px;">${colab.departamento}</span>` : ''}
+                                    ${badgePrazo}
                                 </div>
                                 <div style="display: flex; gap: 8px;">
                                     ${retiradaDoColab ? `
@@ -4200,6 +4533,11 @@
             
             if (!retirada) return;
 
+            const dentroPrazo = retirada.dentroDoPrazo ? 'Sim' : 'Não';
+            const badgePrazo = retirada.dentroDoPrazo ? 
+                '<span class="badge-dentro-prazo">Dentro do Prazo</span>' : 
+                '<span class="badge-fora-prazo">Fora do Prazo</span>';
+
             const detalhes = `
                 <div style="padding: 10px 0;">
                     <div style="margin-bottom: 15px;">
@@ -4227,6 +4565,10 @@
                     <div style="margin-bottom: 15px;">
                         <strong>Quem retirou:</strong><br>
                         ${retirada.quemRetirouNome} (${retirada.quemRetirouTipo})
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Conformidade com Prazo:</strong><br>
+                        ${badgePrazo}
                     </div>
                     <div style="margin-bottom: 15px;">
                         <strong>Data e Hora:</strong><br>
@@ -4271,12 +4613,10 @@
                 
                 doc.setFont("helvetica");
                 
-                // Título
                 doc.setFontSize(20);
                 doc.setTextColor(33, 150, 243);
                 doc.text('RELATÓRIO DE COLABORADORES', 148, 20, { align: 'center' });
                 
-                // Filtros aplicados
                 doc.setFontSize(10);
                 doc.setTextColor(0, 0, 0);
                 let currentY = 30;
@@ -4289,7 +4629,6 @@
                 doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, currentY);
                 doc.text(`Total: ${colaboradoresFiltrados.length} colaboradores`, 20, currentY + 7);
                 
-                // Informações dos filtros
                 let filtrosInfo = '';
                 if (empresaFiltro !== 'todas') filtrosInfo += `Empresa: ${empresaFiltro} `;
                 if (cidadeFiltro !== 'todas') filtrosInfo += `Cidade: ${cidadeFiltro} `;
@@ -4303,10 +4642,8 @@
                     currentY += 14;
                 }
                 
-                // Cabeçalho da tabela
                 const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Status', 'Dependentes', 'Data Cadastro']];
                 
-                // Dados da tabela
                 const data = colaboradoresFiltrados.map((colab, index) => [
                     index + 1,
                     colab.nome,
@@ -4318,7 +4655,6 @@
                     colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : 'N/A'
                 ]);
                 
-                // Gerar tabela
                 doc.autoTable({
                     startY: currentY,
                     head: headers,
@@ -4327,18 +4663,17 @@
                     headStyles: { fillColor: [0, 102, 204] },
                     styles: { fontSize: 9 },
                     columnStyles: {
-                        0: { cellWidth: 15 }, // #
-                        1: { cellWidth: 60 }, // Nome
-                        2: { cellWidth: 40 }, // Empresa
-                        3: { cellWidth: 30 }, // Cidade
-                        4: { cellWidth: 40 }, // Departamento
-                        5: { cellWidth: 25 }, // Status
-                        6: { cellWidth: 25 }, // Dependentes
-                        7: { cellWidth: 30 }  // Data
+                        0: { cellWidth: 15 },
+                        1: { cellWidth: 60 },
+                        2: { cellWidth: 40 },
+                        3: { cellWidth: 30 },
+                        4: { cellWidth: 40 },
+                        5: { cellWidth: 25 },
+                        6: { cellWidth: 25 },
+                        7: { cellWidth: 30 }
                     }
                 });
                 
-                // Rodapé
                 const totalPages = doc.internal.getNumberOfPages();
                 for (let i = 1; i <= totalPages; i++) {
                     doc.setPage(i);
@@ -4352,7 +4687,6 @@
                     );
                 }
                 
-                // Salvar PDF
                 const nomeArquivo = `colaboradores_${new Date().toISOString().split('T')[0]}.pdf`;
                 doc.save(nomeArquivo);
                 showAlert(`Relatório exportado com ${colaboradoresFiltrados.length} colaboradores!`, 'success');
@@ -4377,13 +4711,11 @@
                     return;
                 }
                 
-                // Obter informações dos filtros
                 const empresaFiltro = document.getElementById('filtroEmpresaColaboradores').value;
                 const cidadeFiltro = document.getElementById('filtroCidadeColaboradores').value;
                 const statusFiltro = document.getElementById('filtroStatusColaboradores').value;
                 const buscaFiltro = document.getElementById('searchColaborador').value;
                 
-                // Preparar dados
                 const dados = colaboradoresFiltrados.map((colab, index) => {
                     const dependentes = colab.dependentes || [];
                     const dependentesStr = dependentes.map(d => `${d.nome} (${d.parentesco})`).join('; ');
@@ -4403,10 +4735,8 @@
                     };
                 });
 
-                // Criar planilha
                 const ws = XLSX.utils.json_to_sheet(dados);
                 
-                // Adicionar informações de filtro como metadados
                 if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || statusFiltro !== 'todos' || buscaFiltro) {
                     const infoFiltros = [];
                     if (empresaFiltro !== 'todas') infoFiltros.push(`Empresa: ${empresaFiltro}`);
@@ -4421,11 +4751,9 @@
                         { v: `Gerado por: ${currentUser?.nome || 'Sistema'}`, t: 's' }
                     ];
                     
-                    // Adicionar linha de informações no topo
                     XLSX.utils.sheet_add_aoa(ws, [infoRow.map(cell => cell.v)], { origin: -1 });
                 }
                 
-                // Ajustar largura das colunas
                 const wscols = [
                     { wch: 5 },   // #
                     { wch: 30 },  // Nome
@@ -4477,20 +4805,17 @@
                 
                 doc.setFont("helvetica");
                 
-                // Configurações
                 const marginLeft = 20;
                 const marginTop = 20;
                 const pageWidth = doc.internal.pageSize.width;
                 const pageHeight = doc.internal.pageSize.height;
                 let currentY = marginTop;
                 
-                // Título
                 doc.setFontSize(20);
                 doc.setTextColor(33, 150, 243);
                 doc.text('RELATÓRIO DE RETIRADA DE CESTAS', pageWidth / 2, currentY, { align: 'center' });
                 currentY += 15;
                 
-                // Informações do relatório
                 doc.setFontSize(12);
                 doc.setTextColor(0, 0, 0);
                 doc.text(`Período: ${mesSelecionado}/${anoSelecionado}`, marginLeft, currentY);
@@ -4502,7 +4827,6 @@
                 doc.text(`Data do Relatório: ${new Date().toLocaleDateString('pt-BR')}`, marginLeft, currentY);
                 currentY += 15;
                 
-                // Estatísticas
                 doc.setFontSize(14);
                 doc.setTextColor(0, 0, 0);
                 doc.text('ESTATÍSTICAS', marginLeft, currentY);
@@ -4512,18 +4836,25 @@
                 const totalColaboradores = document.getElementById('relatorioTotalColaboradores').textContent;
                 const totalRetiradas = document.getElementById('relatorioTotalRetiradas').textContent;
                 const percentual = document.getElementById('relatorioPercentual').textContent;
+                const dentroPrazo = document.getElementById('relatorioDentroPrazo').textContent;
+                const foraPrazo = document.getElementById('relatorioForaPrazo').textContent;
+                const conformidade = document.getElementById('relatorioConformidade').textContent;
                 
                 doc.text(`Total de Colaboradores Ativos: ${totalColaboradores}`, marginLeft, currentY);
                 currentY += 7;
                 doc.text(`Retiradas Realizadas: ${totalRetiradas}`, marginLeft, currentY);
                 currentY += 7;
                 doc.text(`Percentual Retirado: ${percentual}`, marginLeft, currentY);
+                currentY += 7;
+                doc.text(`Dentro do Prazo: ${dentroPrazo}`, marginLeft, currentY);
+                currentY += 7;
+                doc.text(`Fora do Prazo: ${foraPrazo}`, marginLeft, currentY);
+                currentY += 7;
+                doc.text(`Taxa de Conformidade: ${conformidade}`, marginLeft, currentY);
                 currentY += 15;
                 
-                // Carregar dados do relatório
                 const retiradasMes = await carregarRetiradasPorMes(mesReferencia);
                 
-                // Filtrar colaboradores (apenas ativos)
                 let colaboradoresFiltrados = [...colaboradoresLista];
                 if (empresaSelecionada !== 'todas') {
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.empresa === empresaSelecionada);
@@ -4532,10 +4863,8 @@
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.cidade === cidadeSelecionada);
                 }
                 
-                // Apenas colaboradores ativos
                 const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
                 
-                // Filtrar retiradas pelos mesmos filtros de empresa e cidade
                 let retiradasFiltradas = retiradasMes.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                     if (!colaborador) return false;
@@ -4551,13 +4880,11 @@
                 const jaRetiraram = colaboradoresAtivos.filter(c => retiradosIds.includes(c.id));
                 const naoRetiraram = colaboradoresAtivos.filter(c => !retiradosIds.includes(c.id));
                 
-                // Verificar se precisa de nova página
                 if (currentY > pageHeight - 50) {
                     doc.addPage();
                     currentY = marginTop;
                 }
                 
-                // Seção 1: Colaboradores que Já Retiraram
                 doc.setFontSize(14);
                 doc.text('COLABORADORES QUE JÁ RETIRARAM', marginLeft, currentY);
                 currentY += 10;
@@ -4573,11 +4900,12 @@
                         }
                         
                         const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
-                        let linha = `${count}. ${colab.nome}`;
+                        const prazoInfo = retiradaDoColab && retiradaDoColab.dentroDoPrazo ? ' (Dentro do Prazo)' : ' (Fora do Prazo)';
                         
-                        // Adicionar informações extras se couber
+                        let linha = `${count}. ${colab.nome}${prazoInfo}`;
+                        
                         if (retiradaDoColab && currentY < pageHeight - 30) {
-                            linha += ` (Retirado por: ${retiradaDoColab.quemRetirouNome} - ${new Date(retiradaDoColab.dataRetirada).toLocaleDateString('pt-BR')})`;
+                            linha += ` - Retirado por: ${retiradaDoColab.quemRetirouNome} (${new Date(retiradaDoColab.dataRetirada).toLocaleDateString('pt-BR')})`;
                         }
                         
                         doc.text(linha, marginLeft, currentY);
@@ -4592,13 +4920,11 @@
                 
                 currentY += 10;
                 
-                // Verificar se precisa de nova página
                 if (currentY > pageHeight - 50) {
                     doc.addPage();
                     currentY = marginTop;
                 }
                 
-                // Seção 2: Colaboradores que Não Retiraram
                 doc.setFontSize(14);
                 doc.text('COLABORADORES QUE NÃO RETIRARAM', marginLeft, currentY);
                 currentY += 10;
@@ -4623,7 +4949,6 @@
                     currentY += 10;
                 }
                 
-                // Rodapé
                 const totalPaginas = doc.internal.getNumberOfPages();
                 for (let i = 1; i <= totalPaginas; i++) {
                     doc.setPage(i);
@@ -4632,7 +4957,6 @@
                     doc.text(`Página ${i} de ${totalPaginas} • Gerado por ${currentUser?.nome || 'Sistema'} em ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
                 }
                 
-                // Salvar o PDF
                 const meses = [
                     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -4671,6 +4995,7 @@
             const empresaNome = config.empresaNome || 'WSNET TELECOM';
             
             const colaborador = colaboradoresLista.find(c => c.id === ultimaRetiradaRegistrada.colaboradorTitularId);
+            const dentroPrazo = ultimaRetiradaRegistrada.dentroDoPrazo ? 'Sim' : 'Não';
             
             return `
                 <div class="recibo">
@@ -4706,6 +5031,11 @@
                     <div class="item">
                         <span class="label">Retirado por:</span>
                         <span>${ultimaRetiradaRegistrada.quemRetirouNome} (${ultimaRetiradaRegistrada.quemRetirouTipo})</span>
+                    </div>
+                    
+                    <div class="item">
+                        <span class="label">Dentro do Prazo:</span>
+                        <span>${dentroPrazo}</span>
                     </div>
                     
                     <div class="item">
@@ -4786,15 +5116,12 @@
                 const usuarios = db.getUsuarios();
                 console.log(`Total de usuários no sistema: ${usuarios.length}`);
                 
-                // VERIFICAR SE HÁ SESSÃO ATIVA (APENAS SESSIONSTORAGE)
                 const sessao = recuperarSessaoUsuario();
                 if (sessao) {
                     console.log('Sessão ativa encontrada na sessão atual. Fazendo login automático...');
                     
-                    // Buscar usuário pelo email da sessão
                     const usuario = usuarios.find(u => u.email.toLowerCase() === sessao.email.toLowerCase());
                     if (usuario) {
-                        // Login automático
                         currentUser = usuario;
                         mesAtual = db.getMesAtual();
                         
@@ -4806,7 +5133,8 @@
                         showMainApp();
                         console.log('Login automático realizado com sucesso!');
                         
-                        // Iniciar escutas Firebase se disponível
+                        carregarConfiguracaoPrazo();
+                        
                         setTimeout(() => {
                             try {
                                 if (window.firebaseInitialized) {
@@ -4820,11 +5148,10 @@
                             }
                         }, 500);
                         
-                        return; // Não mostrar tela de login
+                        return;
                     }
                 }
                 
-                // Se não houver sessão ativa, mostrar tela de login
                 console.log('Nenhuma sessão ativa encontrada. Mostrando tela de login...');
                 showLoginScreen();
                 
@@ -4833,7 +5160,6 @@
                 showLoginScreen();
             }
             
-            // Configurar formulário de login
             const loginForm = document.getElementById('loginForm');
             if (loginForm) {
                 loginForm.addEventListener('submit', function(e) {
@@ -4861,9 +5187,8 @@
                 });
             }
             
-            // Fechar modal ao clicar no overlay
             document.addEventListener('click', function(event) {
-                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalNovoMes', 'modalRetirada', 'modalDetalhesRetirada', 'modalLimparRetiradas', 'confirmacaoRetirada'];
+                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalConfigurarPrazo', 'modalNovoMes', 'modalRetirada', 'modalDetalhesRetirada', 'modalLimparRetiradas', 'confirmacaoRetirada'];
                 modals.forEach(modalId => {
                     const modal = document.getElementById(modalId);
                     if (modal && modal.style.display === 'block' && event.target === modal) {
@@ -4872,7 +5197,6 @@
                 });
             });
             
-            // Inicializar listas vazias
             colaboradoresLista = [];
             retiradasLista = [];
             empresasLista = [];
