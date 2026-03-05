@@ -2355,7 +2355,7 @@
             }
         }
 
-        // ==================== FUNÇÕES DE PRAZO POR MÊS (DATAS ESPECÍFICAS) ====================
+        // ==================== FUNÇÕES DE PRAZO POR MÊS (CORRIGIDAS) ====================
         function obterConfiguracaoPrazoParaMes(mesReferencia) {
             const db = new LocalDatabase();
             const configSalva = db.getConfiguracaoPrazoPorMes(mesReferencia);
@@ -2385,14 +2385,14 @@
             if (prazoInfo) {
                 const diasInfo = config.datasPermitidas && config.datasPermitidas.length > 0 
                     ? `Dias: ${config.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
-                    : 'Nenhuma data configurada';
+                    : 'Nenhuma data configurada (sem restrição)';
                 prazoInfo.textContent = `${diasInfo} • Horário: ${config.horaInicio} às ${config.horaFim}`;
             }
             
             if (prazoInfoRetirada) {
                 const diasInfo = config.datasPermitidas && config.datasPermitidas.length > 0 
                     ? `Dias: ${config.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
-                    : 'Nenhuma data configurada';
+                    : 'Nenhuma data configurada (sem restrição)';
                 prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> ${diasInfo} • ${config.horaInicio} às ${config.horaFim}`;
             }
             
@@ -2403,9 +2403,9 @@
             const data = new Date(dataRetirada);
             const config = obterConfiguracaoPrazoParaMes(mesReferencia);
             
-            // Se não há datas configuradas, considera que não há prazo definido
+            // Se não há datas configuradas, considera que está dentro do prazo (sem restrição)
             if (!config.datasPermitidas || config.datasPermitidas.length === 0) {
-                return true; // Sem restrição de datas
+                return true; // Sem restrição de datas = dentro do prazo
             }
             
             // 1. Verificar se a data está entre as permitidas
@@ -2498,7 +2498,7 @@
                     </div>
                 `).join('');
             } else {
-                container.innerHTML = '<p style="color: var(--wsnet-text-light);">Nenhuma data selecionada. Adicione as datas permitidas para retirada.</p>';
+                container.innerHTML = '<p style="color: var(--wsnet-text-light);">Nenhuma data selecionada. Sem restrição de datas (todas consideradas dentro do prazo).</p>';
             }
         }
 
@@ -2538,13 +2538,8 @@
                 return;
             }
             
-            if (!configuracaoAtual.datasPermitidas || configuracaoAtual.datasPermitidas.length === 0) {
-                showAlert('Selecione pelo menos uma data para retirada!', 'error');
-                return;
-            }
-            
             const novaConfig = {
-                datasPermitidas: configuracaoAtual.datasPermitidas,
+                datasPermitidas: configuracaoAtual.datasPermitidas || [],
                 horaInicio: document.getElementById('horaInicio').value,
                 horaFim: document.getElementById('horaFim').value
             };
@@ -3511,8 +3506,8 @@
                 ? ((retiradasFiltradas.length / colaboradoresAtivos.length) * 100).toFixed(1) 
                 : 0;
             
-            // Calcular dentro/fora do prazo usando configuração do mês
-            const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
+            // Calcular dentro/fora do prazo usando a configuração DO MÊS DA RETIRADA (não do mês atual)
+            const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, r.mesReferencia)).length;
             const foraPrazo = retiradasFiltradas.length - dentroPrazo;
 
             document.getElementById('ativosDashboard').textContent = colaboradoresAtivos.length;
@@ -3530,7 +3525,7 @@
             if (ultimasRetiradas.length > 0) {
                 container.innerHTML = ultimasRetiradas.map(retirada => {
                     const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
-                    const dentroPrazo = verificarSeDentroDoPrazoParaMes(retirada.dataRetirada, mesAtual);
+                    const dentroPrazo = verificarSeDentroDoPrazoParaMes(retirada.dataRetirada, retirada.mesReferencia);
                     const badgePrazo = dentroPrazo ? 
                         '<span class="badge-dentro-prazo" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Dentro do Prazo</span>' : 
                         '<span class="badge-fora-prazo" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Fora do Prazo</span>';
@@ -3808,6 +3803,7 @@
 
             const { quemRetirouId, quemRetirouNome, quemRetirouTipo } = retiradaPendente;
             
+            // Verificar prazo usando a configuração DO MÊS ATUAL (que é o mês da retirada)
             const dentroPrazo = verificarSeDentroDoPrazoParaMes(new Date().toISOString(), mesAtual);
             
             const retirada = {
@@ -4338,6 +4334,7 @@
                 const docRefAntigo = doc(db, "retiradas", retiradaExistenteId);
                 await deleteDoc(docRefAntigo);
                 
+                // Verificar prazo usando a configuração DO MÊS ATUAL (que é o mês da correção)
                 const dentroPrazo = verificarSeDentroDoPrazoParaMes(new Date().toISOString(), mesAtual);
                 
                 const novaRetirada = {
@@ -4416,6 +4413,7 @@
                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
                 ];
                 
+                // Calcular dentro/fora do prazo usando a configuração DO MÊS ANTIGO
                 const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
                 
                 historico.push({
@@ -4631,7 +4629,8 @@
                     ? ((totalRetiradas / totalColaboradores) * 100).toFixed(1)
                     : 0;
                 
-                const dentroPrazo = retiradasFiltradas.filter(r => r.dentroDoPrazo === true).length;
+                // Verificar dentro/fora do prazo usando a configuração DO MÊS DA RETIRADA
+                const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, r.mesReferencia)).length;
                 const foraPrazo = retiradasFiltradas.length - dentroPrazo;
                 const taxaConformidade = retiradasFiltradas.length > 0 
                     ? ((dentroPrazo / retiradasFiltradas.length) * 100).toFixed(1)
@@ -4690,7 +4689,9 @@
             if (jaRetiraram.length > 0) {
                 containerRetirados.innerHTML = jaRetiraram.map(colab => {
                     const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
-                    const badgePrazo = retiradaDoColab && retiradaDoColab.dentroDoPrazo ? 
+                    // Verificar prazo usando a configuração DO MÊS DA RETIRADA
+                    const dentroPrazo = retiradaDoColab ? verificarSeDentroDoPrazoParaMes(retiradaDoColab.dataRetirada, retiradaDoColab.mesReferencia) : false;
+                    const badgePrazo = dentroPrazo ? 
                         '<span class="badge-dentro-prazo" style="padding: 2px 8px; border-radius: 8px; font-size: 11px;">Dentro do Prazo</span>' : 
                         '<span class="badge-fora-prazo" style="padding: 2px 8px; border-radius: 8px; font-size: 11px;">Fora do Prazo</span>';
                     
@@ -4772,8 +4773,9 @@
             
             if (!retirada) return;
 
-            const dentroPrazo = retirada.dentroDoPrazo ? 'Sim' : 'Não';
-            const badgePrazo = retirada.dentroDoPrazo ? 
+            // Verificar prazo usando a configuração DO MÊS DA RETIRADA
+            const dentroPrazo = verificarSeDentroDoPrazoParaMes(retirada.dataRetirada, retirada.mesReferencia);
+            const badgePrazo = dentroPrazo ? 
                 '<span class="badge-dentro-prazo">Dentro do Prazo</span>' : 
                 '<span class="badge-fora-prazo">Fora do Prazo</span>';
 
@@ -5148,7 +5150,8 @@
                         }
                         
                         const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
-                        const prazoInfo = retiradaDoColab && retiradaDoColab.dentroDoPrazo ? ' (Dentro do Prazo)' : ' (Fora do Prazo)';
+                        const dentroPrazo = retiradaDoColab ? verificarSeDentroDoPrazoParaMes(retiradaDoColab.dataRetirada, retiradaDoColab.mesReferencia) : false;
+                        const prazoInfo = dentroPrazo ? ' (Dentro do Prazo)' : ' (Fora do Prazo)';
                         
                         let linha = `${count}. ${colab.nome}${prazoInfo}`;
                         
