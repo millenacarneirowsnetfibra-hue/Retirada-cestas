@@ -321,7 +321,7 @@
         /* Cards */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -373,10 +373,9 @@
             font-size: 24px;
         }
 
-        .stat-icon.total { background: rgba(0, 102, 204, 0.1); color: var(--wsnet-primary); }
+        .stat-icon.ativos { background: rgba(0, 102, 204, 0.1); color: var(--wsnet-primary); }
         .stat-icon.pending { background: rgba(255, 153, 0, 0.1); color: var(--wsnet-warning); }
         .stat-icon.percentage { background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); }
-        .stat-icon.company { background: rgba(102, 204, 255, 0.1); color: var(--wsnet-accent); }
         .stat-icon.dentro-prazo { background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); }
         .stat-icon.fora-prazo { background: rgba(255, 51, 51, 0.1); color: var(--wsnet-danger); }
 
@@ -602,7 +601,41 @@
             min-width: 200px;
         }
 
-        /* Configurações de Prazo */
+        /* Configurações de Prazo por Mês */
+        .config-prazo-mensal {
+            background: var(--wsnet-bg-light);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .mes-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .mes-item {
+            background: var(--wsnet-bg-card);
+            border: 1px solid var(--wsnet-border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mes-item:hover {
+            background: var(--wsnet-primary-light);
+            color: white;
+        }
+
+        .mes-item.selected {
+            background: var(--wsnet-primary);
+            color: white;
+            border-color: var(--wsnet-primary-dark);
+        }
+
         .config-prazo-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -645,7 +678,7 @@
             background: var(--wsnet-bg-card);
             border-radius: var(--radius-lg);
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             margin: 20px auto;
             max-height: 85vh;
             overflow-y: auto;
@@ -706,6 +739,12 @@
             background: rgba(255, 153, 0, 0.1);
             border-left: 4px solid var(--wsnet-warning);
             color: var(--wsnet-warning);
+        }
+
+        .alert-info {
+            background: rgba(0, 102, 204, 0.1);
+            border-left: 4px solid var(--wsnet-primary);
+            color: var(--wsnet-primary);
         }
 
         /* Login Screen */
@@ -808,7 +847,6 @@
         }
 
         /* Responsive Design */
-        /* Tablet */
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -852,7 +890,6 @@
             }
         }
 
-        /* Mobile */
         @media (max-width: 768px) {
             .top-bar {
                 flex-direction: column;
@@ -926,9 +963,12 @@
             .config-prazo-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .mes-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
-        /* Small Mobile */
         @media (max-width: 480px) {
             .main-content {
                 padding: 10px;
@@ -983,6 +1023,10 @@
             
             .login-logo h1 {
                 font-size: 20px;
+            }
+            
+            .mes-selector {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1087,7 +1131,7 @@
                     </a>
                     <a href="javascript:void(0)" class="menu-item" onclick="openConfigurarPrazo()">
                         <span class="material-icons">schedule</span>
-                        <span>Configurar Prazo</span>
+                        <span>Configurar Prazo por Mês</span>
                     </a>
                 </div>
 
@@ -1173,15 +1217,7 @@
 
                     <div class="dashboard-grid">
                         <div class="card stat-card">
-                            <div class="stat-icon total">
-                                <span class="material-icons">group</span>
-                            </div>
-                            <div class="stat-value" id="totalColaboradores">0</div>
-                            <div class="stat-label">Total de Colaboradores</div>
-                        </div>
-                        
-                        <div class="card stat-card">
-                            <div class="stat-icon total">
+                            <div class="stat-icon ativos">
                                 <span class="material-icons">check_circle</span>
                             </div>
                             <div class="stat-value" id="ativosDashboard">0</div>
@@ -1242,7 +1278,7 @@
                                 Conformidade com Prazo
                             </h3>
                             <div style="font-size: 14px; color: var(--wsnet-text-medium);" id="prazoInfo">
-                                Prazo: 3 dias úteis das 08:00 às 18:00
+                                Carregando configuração do mês...
                             </div>
                         </div>
                         <div style="height: 300px;">
@@ -1297,7 +1333,7 @@
                             </h3>
                             <div id="prazoInfoRetirada" style="font-size: 13px; background: rgba(0, 102, 204, 0.1); padding: 8px 12px; border-radius: var(--radius-md); color: var(--wsnet-primary-dark);">
                                 <span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span>
-                                Prazo: 3 dias úteis das 08:00 às 18:00
+                                Carregando configuração do mês...
                             </div>
                         </div>
                         
@@ -1485,7 +1521,7 @@
 
                         <div class="dashboard-grid" style="margin-bottom: 30px;">
                             <div class="card stat-card">
-                                <div class="stat-icon total">
+                                <div class="stat-icon ativos">
                                     <span class="material-icons">group</span>
                                 </div>
                                 <div class="stat-value" id="relatorioTotalColaboradores">0</div>
@@ -1493,7 +1529,7 @@
                             </div>
                             
                             <div class="card stat-card">
-                                <div class="stat-icon total">
+                                <div class="stat-icon ativos">
                                     <span class="material-icons">shopping_cart_checkout</span>
                                 </div>
                                 <div class="stat-value" id="relatorioTotalRetiradas">0</div>
@@ -1631,6 +1667,29 @@
                     </div>
                     
                     <div class="form-group">
+                        <label class="form-label">Mês de Início (Primeiro mês que poderá retirar) *</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select class="form-control" id="mesInicioColaborador" required style="flex: 1;">
+                                <option value="">Mês...</option>
+                                <option value="01">Janeiro</option>
+                                <option value="02">Fevereiro</option>
+                                <option value="03">Março</option>
+                                <option value="04">Abril</option>
+                                <option value="05">Maio</option>
+                                <option value="06">Junho</option>
+                                <option value="07">Julho</option>
+                                <option value="08">Agosto</option>
+                                <option value="09">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
+                            </select>
+                            <input type="number" class="form-control" id="anoInicioColaborador" required placeholder="Ano" style="flex: 1;" min="2020" max="2100">
+                        </div>
+                        <small style="color: var(--wsnet-text-medium);">O colaborador só aparecerá para retiradas a partir deste mês</small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label class="form-label">Status do Colaborador *</label>
                         <select class="form-control" id="statusColaborador" required>
                             <option value="ativo" selected>Ativo</option>
@@ -1763,85 +1822,122 @@
         </div>
     </div>
 
-    <!-- Modal Configurar Prazo -->
+    <!-- Modal Configurar Prazo por Mês -->
     <div id="modalConfigurarPrazo" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
-                <h3>Configurar Prazo de Retirada</h3>
+                <h3>Configurar Prazo de Retirada por Mês</h3>
                 <span class="material-icons" style="cursor: pointer;" onclick="closeModal('modalConfigurarPrazo')">close</span>
             </div>
             <div class="modal-body">
                 <div class="alert alert-info" style="display: block; margin-bottom: 20px;">
                     <span class="material-icons" style="vertical-align: middle;">info</span>
-                    Configure os dias e horários permitidos para retirada. O sistema NÃO bloqueará retiradas fora do prazo, apenas registrará se estão dentro ou fora.
+                    Configure os dias e horários permitidos para retirada para cada mês. Cada mês mantém sua configuração salva para consulta em relatórios.
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Dias da Semana Permitidos:</label>
-                    <div class="dias-semana">
-                        <label class="dia-checkbox">
-                            <input type="checkbox" id="diaSegunda" value="1" checked> Segunda
-                        </label>
-                        <label class="dia-checkbox">
-                            <input type="checkbox" id="diaTerca" value="2" checked> Terça
-                        </label>
-                        <label class="dia-checkbox">
-                            <input type="checkbox" id="diaQuarta" value="3" checked> Quarta
-                        </label>
-                        <label class="dia-checkbox">
-                            <input type="checkbox" id="diaQuinta" value="4" checked> Quinta
-                        </label>
-                        <label class="dia-checkbox">
-                            <input type="checkbox" id="diaSexta" value="5" checked> Sexta
-                        </label>
-                        <label class="dia-checkbox">
-                            <input type="checkbox" id="diaSabado" value="6"> Sábado
-                        </label>
-                        <label class="dia-checkbox">
-                            <input type="checkbox" id="diaDomingo" value="0"> Domingo
-                        </label>
+                    <label class="form-label">Selecione o Mês para Configurar:</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <select class="form-control" id="mesConfigurar" style="flex: 1;">
+                            <option value="">Selecione...</option>
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                        <input type="number" class="form-control" id="anoConfigurar" placeholder="Ano" style="flex: 1;" min="2020" max="2100">
+                        <button type="button" class="btn btn-primary" onclick="carregarConfiguracaoPrazoPorMes()">
+                            <span class="material-icons">search</span>
+                            Carregar
+                        </button>
                     </div>
                 </div>
 
-                <div class="config-prazo-grid">
+                <div id="configuracoesSalvas" class="config-prazo-mensal" style="display: none;">
+                    <h4 style="margin-bottom: 15px; color: var(--wsnet-primary-dark);">
+                        Configuração para <span id="mesAnoSelecionado"></span>
+                    </h4>
+
                     <div class="form-group">
-                        <label class="form-label">Horário Início:</label>
-                        <input type="time" class="form-control" id="horaInicio" value="08:00">
+                        <label class="form-label">Dias da Semana Permitidos:</label>
+                        <div class="dias-semana">
+                            <label class="dia-checkbox">
+                                <input type="checkbox" id="diaSegunda" value="1" checked> Segunda
+                            </label>
+                            <label class="dia-checkbox">
+                                <input type="checkbox" id="diaTerca" value="2" checked> Terça
+                            </label>
+                            <label class="dia-checkbox">
+                                <input type="checkbox" id="diaQuarta" value="3" checked> Quarta
+                            </label>
+                            <label class="dia-checkbox">
+                                <input type="checkbox" id="diaQuinta" value="4" checked> Quinta
+                            </label>
+                            <label class="dia-checkbox">
+                                <input type="checkbox" id="diaSexta" value="5" checked> Sexta
+                            </label>
+                            <label class="dia-checkbox">
+                                <input type="checkbox" id="diaSabado" value="6"> Sábado
+                            </label>
+                            <label class="dia-checkbox">
+                                <input type="checkbox" id="diaDomingo" value="0"> Domingo
+                            </label>
+                        </div>
                     </div>
+
+                    <div class="config-prazo-grid">
+                        <div class="form-group">
+                            <label class="form-label">Horário Início:</label>
+                            <input type="time" class="form-control" id="horaInicio" value="08:00">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Horário Fim:</label>
+                            <input type="time" class="form-control" id="horaFim" value="18:00">
+                        </div>
+                    </div>
+
                     <div class="form-group">
-                        <label class="form-label">Horário Fim:</label>
-                        <input type="time" class="form-control" id="horaFim" value="18:00">
+                        <label class="form-label">Dias para Retirada (após início do mês):</label>
+                        <select class="form-control" id="diasRetirada">
+                            <option value="1">1 dia</option>
+                            <option value="2">2 dias</option>
+                            <option value="3" selected>3 dias</option>
+                            <option value="4">4 dias</option>
+                            <option value="5">5 dias</option>
+                            <option value="6">6 dias</option>
+                            <option value="7">7 dias</option>
+                            <option value="10">10 dias</option>
+                            <option value="15">15 dias</option>
+                            <option value="30">30 dias</option>
+                        </select>
+                        <small style="color: var(--wsnet-text-medium);">Dias corridos a partir do 1º dia do mês</small>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label class="form-label">Dias para Retirada (após início do mês):</label>
-                    <select class="form-control" id="diasRetirada">
-                        <option value="1">1 dia</option>
-                        <option value="2">2 dias</option>
-                        <option value="3" selected>3 dias</option>
-                        <option value="4">4 dias</option>
-                        <option value="5">5 dias</option>
-                        <option value="6">6 dias</option>
-                        <option value="7">7 dias</option>
-                        <option value="10">10 dias</option>
-                        <option value="15">15 dias</option>
-                        <option value="30">30 dias</option>
-                    </select>
-                    <small style="color: var(--wsnet-text-medium);">Dias corridos a partir do 1º dia do mês</small>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Considerar Apenas Dias Úteis:</label>
+                        <select class="form-control" id="considerarDiasUteis">
+                            <option value="sim">Sim (contar apenas dias úteis)</option>
+                            <option value="nao">Não (contar todos os dias)</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">Considerar Apenas Dias Úteis:</label>
-                    <select class="form-control" id="considerarDiasUteis">
-                        <option value="sim">Sim (contar apenas dias úteis)</option>
-                        <option value="nao">Não (contar todos os dias)</option>
-                    </select>
+                    <div class="alert alert-warning" style="display: block; margin-top: 20px;">
+                        <span class="material-icons" style="vertical-align: middle;">warning</span>
+                        Esta configuração será aplicada apenas para o mês selecionado e ficará salva para consulta em relatórios.
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modalConfigurarPrazo')">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="salvarConfiguracaoPrazo()">Salvar Configuração</button>
+                <button type="button" class="btn btn-primary" onclick="salvarConfiguracaoPrazoMensal()" id="btnSalvarConfiguracao">Salvar Configuração do Mês</button>
             </div>
         </div>
     </div>
@@ -1857,10 +1953,11 @@
                 <p style="margin-bottom: 20px; color: var(--wsnet-text-medium);">Ao iniciar um novo mês, o sistema irá:</p>
                 <ul style="margin-bottom: 20px; padding-left: 20px; color: var(--wsnet-text-medium);">
                     <li>Salvar todas as retiradas do mês atual no histórico</li>
+                    <li>Manter a configuração de prazo do mês atual salva para consultas</li>
                     <li>NÃO marcar cestas não retiradas como retiradas</li>
                     <li>Manter todas as retiradas existentes no histórico</li>
                     <li>Manter todos os colaboradores e dependentes</li>
-                    <li>Todos os colaboradores ficarão como PENDENTES para o novo mês</li>
+                    <li>Todos os colaboradores ativos com data de início menor ou igual ao novo mês ficarão como PENDENTES</li>
                 </ul>
                 
                 <div class="form-group">
@@ -1893,7 +1990,7 @@
                 
                 <div class="alert alert-warning" style="display: block; margin-top: 20px;">
                     <span class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</span>
-                    <strong>Importante:</strong> As cestas não retiradas NÃO serão marcadas como retiradas. Todos os colaboradores ficarão como PENDENTES no novo mês.
+                    <strong>Importante:</strong> As cestas não retiradas NÃO serão marcadas como retiradas. Apenas colaboradores ativos com data de início menor ou igual ao novo mês aparecerão como PENDENTES.
                 </div>
             </div>
             <div class="modal-footer">
@@ -1921,9 +2018,9 @@
                     <li><strong>Apagar TODAS as retiradas registradas</strong></li>
                     <li><strong>Limpar todo o histórico de retiradas</strong></li>
                     <li>Manter todos os colaboradores cadastrados</li>
-                    <li>Manter todos os departamentos</li>
-                    <li>Manter a configuração do mês atual</li>
-                    <li>Todos os colaboradores ficarão como PENDENTES</li>
+                    <li>Manter todos os departamentos e empresas</li>
+                    <li>Manter as configurações de prazo por mês</li>
+                    <li>Todos os colaboradores com data de início válida ficarão como PENDENTES</li>
                 </ul>
                 
                 <div class="form-group">
@@ -2000,7 +2097,7 @@
     </div>
 
     <script>
-        // ==================== SISTEMA COMPLETO COM CONTROLE DE PRAZO ====================
+        // ==================== SISTEMA COMPLETO COM CONFIGURAÇÃO POR MÊS ====================
         let currentUser = null;
         let colaboradorSelecionado = null;
         let dependentesEditando = [];
@@ -2016,19 +2113,11 @@
         let escutaRetiradasAtiva = false;
         let escutaEmpresasAtiva = false;
         let escutaDepartamentosAtiva = false;
+        let configuracoesPrazoMensal = {};
         let relatorioAtual = {
             jaRetiraram: [],
             naoRetiraram: [],
             retiradas: []
-        };
-        
-        // Configuração de prazo
-        let configuracaoPrazo = {
-            diasPermitidos: [1, 2, 3, 4, 5], // Segunda a sexta
-            horaInicio: '08:00',
-            horaFim: '18:00',
-            diasRetirada: 3,
-            considerarDiasUteis: true
         };
         
         let mesAtual = null;
@@ -2085,8 +2174,8 @@
                     }));
                 }
                 
-                if (!localStorage.getItem('configuracaoPrazo')) {
-                    localStorage.setItem('configuracaoPrazo', JSON.stringify(configuracaoPrazo));
+                if (!localStorage.getItem('configuracoesPrazoMensal')) {
+                    localStorage.setItem('configuracoesPrazoMensal', JSON.stringify({}));
                 }
                 
                 if (!localStorage.getItem('historicoRetiradas')) {
@@ -2220,52 +2309,84 @@
                 });
             }
             
-            getConfiguracaoPrazo() {
+            carregarConfiguracoesPrazoMensal() {
                 try {
-                    const config = JSON.parse(localStorage.getItem('configuracaoPrazo'));
-                    if (config) return config;
-                } catch (error) {}
-                return configuracaoPrazo;
+                    const configs = JSON.parse(localStorage.getItem('configuracoesPrazoMensal')) || {};
+                    configuracoesPrazoMensal = configs;
+                    return configs;
+                } catch (error) {
+                    configuracoesPrazoMensal = {};
+                    return {};
+                }
             }
             
-            setConfiguracaoPrazo(config) {
-                localStorage.setItem('configuracaoPrazo', JSON.stringify(config));
-                configuracaoPrazo = config;
+            salvarConfiguracaoPrazoMensal(mesReferencia, config) {
+                const configs = this.carregarConfiguracoesPrazoMensal();
+                configs[mesReferencia] = config;
+                localStorage.setItem('configuracoesPrazoMensal', JSON.stringify(configs));
+                configuracoesPrazoMensal = configs;
+            }
+            
+            getConfiguracaoPrazoPorMes(mesReferencia) {
+                this.carregarConfiguracoesPrazoMensal();
+                return configuracoesPrazoMensal[mesReferencia] || null;
             }
         }
 
-        // ==================== FUNÇÕES DE PRAZO ====================
-        function carregarConfiguracaoPrazo() {
+        // ==================== FUNÇÕES DE PRAZO POR MÊS ====================
+        function obterConfiguracaoPrazoParaMes(mesReferencia) {
             const db = new LocalDatabase();
-            configuracaoPrazo = db.getConfiguracaoPrazo();
+            const configSalva = db.getConfiguracaoPrazoPorMes(mesReferencia);
+            
+            if (configSalva) {
+                return configSalva;
+            }
+            
+            // Configuração padrão
+            return {
+                diasPermitidos: [1, 2, 3, 4, 5],
+                horaInicio: '08:00',
+                horaFim: '18:00',
+                diasRetirada: 3,
+                considerarDiasUteis: true
+            };
+        }
+
+        function carregarConfiguracaoPrazoParaMes() {
+            if (!mesAtual) return;
+            
+            const config = obterConfiguracaoPrazoParaMes(mesAtual);
             
             // Atualizar informações na interface
             const prazoInfo = document.getElementById('prazoInfo');
             const prazoInfoRetirada = document.getElementById('prazoInfoRetirada');
             
             if (prazoInfo) {
-                prazoInfo.textContent = `Prazo: ${configuracaoPrazo.diasRetirada} dias ${configuracaoPrazo.considerarDiasUteis ? 'úteis' : 'corridos'} das ${configuracaoPrazo.horaInicio} às ${configuracaoPrazo.horaFim}`;
+                prazoInfo.textContent = `Prazo: ${config.diasRetirada} dias ${config.considerarDiasUteis ? 'úteis' : 'corridos'} das ${config.horaInicio} às ${config.horaFim}`;
             }
             
             if (prazoInfoRetirada) {
-                prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> Prazo: ${configuracaoPrazo.diasRetirada} dias ${configuracaoPrazo.considerarDiasUteis ? 'úteis' : 'corridos'} das ${configuracaoPrazo.horaInicio} às ${configuracaoPrazo.horaFim}`;
+                prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> Prazo: ${config.diasRetirada} dias ${config.considerarDiasUteis ? 'úteis' : 'corridos'} das ${config.horaInicio} às ${config.horaFim}`;
             }
+            
+            return config;
         }
 
-        function verificarSeDentroDoPrazo(dataRetirada, mesReferencia) {
+        function verificarSeDentroDoPrazoParaMes(dataRetirada, mesReferencia) {
             const data = new Date(dataRetirada);
+            const config = obterConfiguracaoPrazoParaMes(mesReferencia);
             
             // 1. Verificar dia da semana
             const diaSemana = data.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
-            if (!configuracaoPrazo.diasPermitidos.includes(diaSemana)) {
+            if (!config.diasPermitidos.includes(diaSemana)) {
                 return false;
             }
             
             // 2. Verificar horário
             const hora = data.getHours();
             const minutos = data.getMinutes();
-            const [horaInicio, minInicio] = configuracaoPrazo.horaInicio.split(':').map(Number);
-            const [horaFim, minFim] = configuracaoPrazo.horaFim.split(':').map(Number);
+            const [horaInicio, minInicio] = config.horaInicio.split(':').map(Number);
+            const [horaFim, minFim] = config.horaFim.split(':').map(Number);
             
             const minutosTotal = hora * 60 + minutos;
             const minutosInicio = horaInicio * 60 + minInicio;
@@ -2275,13 +2396,13 @@
                 return false;
             }
             
-            // 3. Verificar dias corridos desde o início do mês
+            // 3. Verificar dias desde o início do mês
             const [ano, mes] = mesReferencia.split('-').map(Number);
             const primeiroDiaMes = new Date(ano, mes - 1, 1);
             
             const diferencaDias = Math.floor((data - primeiroDiaMes) / (1000 * 60 * 60 * 24));
             
-            if (configuracaoPrazo.considerarDiasUteis) {
+            if (config.considerarDiasUteis) {
                 // Contar apenas dias úteis
                 let diasUteis = 0;
                 let dataAtual = new Date(primeiroDiaMes);
@@ -2294,32 +2415,66 @@
                     dataAtual.setDate(dataAtual.getDate() + 1);
                 }
                 
-                return diasUteis <= configuracaoPrazo.diasRetirada;
+                return diasUteis <= config.diasRetirada;
             } else {
-                return diferencaDias <= configuracaoPrazo.diasRetirada;
+                return diferencaDias <= config.diasRetirada;
             }
         }
 
         function openConfigurarPrazo() {
-            // Carregar configuração atual nos campos
-            document.getElementById('horaInicio').value = configuracaoPrazo.horaInicio;
-            document.getElementById('horaFim').value = configuracaoPrazo.horaFim;
-            document.getElementById('diasRetirada').value = configuracaoPrazo.diasRetirada;
-            document.getElementById('considerarDiasUteis').value = configuracaoPrazo.considerarDiasUteis ? 'sim' : 'nao';
+            // Limpar campos
+            document.getElementById('mesConfigurar').value = '';
+            document.getElementById('anoConfigurar').value = new Date().getFullYear();
+            document.getElementById('configuracoesSalvas').style.display = 'none';
+            
+            openModal('modalConfigurarPrazo');
+        }
+
+        function carregarConfiguracaoPrazoPorMes() {
+            const mes = document.getElementById('mesConfigurar').value;
+            const ano = document.getElementById('anoConfigurar').value;
+            
+            if (!mes || !ano) {
+                showAlert('Selecione o mês e ano!', 'error');
+                return;
+            }
+            
+            const mesReferencia = `${ano}-${mes}`;
+            const config = obterConfiguracaoPrazoParaMes(mesReferencia);
+            
+            const meses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            document.getElementById('mesAnoSelecionado').textContent = `${meses[parseInt(mes) - 1]} de ${ano}`;
+            
+            // Carregar valores nos campos
+            document.getElementById('horaInicio').value = config.horaInicio;
+            document.getElementById('horaFim').value = config.horaFim;
+            document.getElementById('diasRetirada').value = config.diasRetirada;
+            document.getElementById('considerarDiasUteis').value = config.considerarDiasUteis ? 'sim' : 'nao';
             
             // Marcar dias da semana
             const dias = ['diaDomingo', 'diaSegunda', 'diaTerca', 'diaQuarta', 'diaQuinta', 'diaSexta', 'diaSabado'];
             dias.forEach((dia, index) => {
                 const checkbox = document.getElementById(dia);
                 if (checkbox) {
-                    checkbox.checked = configuracaoPrazo.diasPermitidos.includes(index);
+                    checkbox.checked = config.diasPermitidos.includes(index);
                 }
             });
             
-            openModal('modalConfigurarPrazo');
+            document.getElementById('configuracoesSalvas').style.display = 'block';
         }
 
-        function salvarConfiguracaoPrazo() {
+        function salvarConfiguracaoPrazoMensal() {
+            const mes = document.getElementById('mesConfigurar').value;
+            const ano = document.getElementById('anoConfigurar').value;
+            
+            if (!mes || !ano) {
+                showAlert('Selecione o mês e ano!', 'error');
+                return;
+            }
+            
             // Coletar dias permitidos
             const diasPermitidos = [];
             const dias = ['diaDomingo', 'diaSegunda', 'diaTerca', 'diaQuarta', 'diaQuinta', 'diaSexta', 'diaSabado'];
@@ -2344,19 +2499,18 @@
                 considerarDiasUteis: document.getElementById('considerarDiasUteis').value === 'sim'
             };
             
+            const mesReferencia = `${ano}-${mes}`;
             const db = new LocalDatabase();
-            db.setConfiguracaoPrazo(novaConfig);
+            db.salvarConfiguracaoPrazoMensal(mesReferencia, novaConfig);
             
-            showAlert('Configuração de prazo salva com sucesso!', 'success');
-            closeModal('modalConfigurarPrazo');
+            showAlert(`Configuração salva para ${mesReferencia}!`, 'success');
             
-            // Atualizar informações na interface
-            carregarConfiguracaoPrazo();
-            
-            // Recarregar dados para aplicar nova verificação
-            if (document.getElementById('dashboard').classList.contains('active')) {
-                carregarDashboard();
+            // Se for o mês atual, atualizar interface
+            if (mesReferencia === mesAtual) {
+                carregarConfiguracaoPrazoParaMes();
             }
+            
+            closeModal('modalConfigurarPrazo');
         }
 
         // ==================== FUNÇÕES RESPONSIVAS ====================
@@ -2411,7 +2565,7 @@
                 console.error('Erro ao iniciar escutas Firebase:', error);
             }
             
-            carregarConfiguracaoPrazo();
+            carregarConfiguracaoPrazoParaMes();
             carregarDashboard();
             handleResize();
         }
@@ -2682,19 +2836,24 @@
                 const empresa = document.getElementById('empresaColaborador').value;
                 const cidade = document.getElementById('cidadeColaborador').value;
                 const departamento = document.getElementById('departamentoColaborador').value;
+                const mesInicio = document.getElementById('mesInicioColaborador').value;
+                const anoInicio = document.getElementById('anoInicioColaborador').value;
                 const status = document.getElementById('statusColaborador').value;
                 const colaboradorId = document.getElementById('colaboradorId').value;
 
-                if (!nome || !empresa || !cidade || !departamento || !status) {
+                if (!nome || !empresa || !cidade || !departamento || !mesInicio || !anoInicio || !status) {
                     showAlert('Preencha todos os campos obrigatórios!', 'error');
                     return;
                 }
+
+                const dataInicio = `${anoInicio}-${mesInicio}`;
 
                 const colaboradorData = {
                     nome: nome,
                     empresa: empresa,
                     cidade: cidade,
                     departamento: departamento,
+                    dataInicio: dataInicio,
                     status: status,
                     dependentes: [...dependentesEditando],
                     updatedAt: new Date().toISOString(),
@@ -3028,7 +3187,7 @@
                     });
                     
                     await Promise.all(deletePromises);
-                    showAlert(`Departamento "${departamentoNome}" removida com sucesso!`, 'success');
+                    showAlert(`Departamento "${departamentoNome}" removido com sucesso!`, 'success');
                 } else {
                     showAlert('Departamento não encontrado no banco de dados.', 'error');
                 }
@@ -3271,64 +3430,19 @@
             return filtrados;
         }
 
-        // ==================== FUNÇÕES DE EXPORTAÇÃO COM FILTROS ====================
-        function obterColaboradoresFiltrados() {
-            const empresaSelecionada = document.getElementById('filtroEmpresaColaboradores').value;
-            const cidadeSelecionada = document.getElementById('filtroCidadeColaboradores').value;
-            const statusSelecionado = document.getElementById('filtroStatusColaboradores').value;
-            const search = document.getElementById('searchColaborador').value.toLowerCase();
-            
-            let filtrados = [...colaboradoresLista];
-            
-            if (empresaSelecionada !== 'todas') {
-                filtrados = filtrados.filter(c => c.empresa === empresaSelecionada);
-            }
-            
-            if (cidadeSelecionada !== 'todas') {
-                filtrados = filtrados.filter(c => c.cidade === cidadeSelecionada);
-            }
-            
-            if (statusSelecionado !== 'todos') {
-                filtrados = filtrados.filter(c => c.status === statusSelecionado);
-            }
-            
-            if (search) {
-                filtrados = filtrados.filter(colaborador => 
-                    colaborador.nome.toLowerCase().includes(search) ||
-                    (colaborador.departamento && colaborador.departamento.toLowerCase().includes(search)) ||
-                    (colaborador.empresa && colaborador.empresa.toLowerCase().includes(search)) ||
-                    (colaborador.cidade && colaborador.cidade.toLowerCase().includes(search))
-                );
-            }
-            
-            return filtrados;
-        }
-
-        function atualizarContadorColaboradores() {
-            const colaboradoresFiltrados = obterColaboradoresFiltrados();
-            const contadorElement = document.getElementById('contadorColaboradoresFiltrados');
-            
-            if (contadorElement && colaboradoresLista.length > 0) {
-                const totalFiltrado = colaboradoresFiltrados.length;
-                const totalGeral = colaboradoresLista.length;
-                const ativos = colaboradoresLista.filter(c => c.status === 'ativo').length;
-                const inativos = colaboradoresLista.filter(c => c.status === 'inativo').length;
-                
-                if (totalFiltrado === totalGeral) {
-                    contadorElement.textContent = `Total: ${totalGeral} (${ativos} ativos, ${inativos} inativos)`;
-                } else {
-                    contadorElement.textContent = `Mostrando ${totalFiltrado} de ${totalGeral}`;
-                }
-            }
-        }
-
         // ==================== DASHBOARD ====================
         function carregarDashboard() {
             const empresaSelecionada = document.getElementById('filtroEmpresaDashboard').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeDashboard').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
             
-            const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+            // Filtrar apenas colaboradores que já podem retirar neste mês
+            const colaboradoresAtivos = colaboradoresFiltrados.filter(c => 
+                c.status === 'ativo' && 
+                c.dataInicio && 
+                c.dataInicio <= mesAtual
+            );
+            
             const colaboradoresInativos = colaboradoresFiltrados.filter(c => c.status === 'inativo');
             
             const retiradasFiltradas = retiradasLista.filter(r => {
@@ -3347,11 +3461,10 @@
                 ? ((retiradasFiltradas.length / colaboradoresAtivos.length) * 100).toFixed(1) 
                 : 0;
             
-            // Calcular dentro/fora do prazo
-            const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazo(r.dataRetirada, mesAtual)).length;
+            // Calcular dentro/fora do prazo usando configuração do mês
+            const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
             const foraPrazo = retiradasFiltradas.length - dentroPrazo;
 
-            document.getElementById('totalColaboradores').textContent = colaboradoresFiltrados.length;
             document.getElementById('ativosDashboard').textContent = colaboradoresAtivos.length;
             document.getElementById('pendentes').textContent = pendentes;
             document.getElementById('percentualRetirado').textContent = percentual + '%';
@@ -3367,7 +3480,7 @@
             if (ultimasRetiradas.length > 0) {
                 container.innerHTML = ultimasRetiradas.map(retirada => {
                     const colaborador = colaboradoresLista.find(c => c.id === retirada.colaboradorTitularId);
-                    const dentroPrazo = verificarSeDentroDoPrazo(retirada.dataRetirada, mesAtual);
+                    const dentroPrazo = verificarSeDentroDoPrazoParaMes(retirada.dataRetirada, mesAtual);
                     const badgePrazo = dentroPrazo ? 
                         '<span class="badge-dentro-prazo" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Dentro do Prazo</span>' : 
                         '<span class="badge-fora-prazo" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Fora do Prazo</span>';
@@ -3508,7 +3621,12 @@
             const cidadeSelecionada = document.getElementById('filtroCidadeRetirada').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
             
-            const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+            // Filtrar apenas colaboradores ativos com data de início menor ou igual ao mês atual
+            const colaboradoresAtivos = colaboradoresFiltrados.filter(c => 
+                c.status === 'ativo' && 
+                c.dataInicio && 
+                c.dataInicio <= mesAtual
+            );
             
             const retiradosIds = retiradasLista.map(r => r.colaboradorTitularId);
             const pendentes = colaboradoresAtivos.filter(c => !retiradosIds.includes(c.id));
@@ -3537,8 +3655,8 @@
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
                         <span class="material-icons" style="font-size: 48px; color: var(--wsnet-danger);">person_off</span>
-                        <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhum colaborador ativo!</h3>
-                        <p style="color: var(--wsnet-text-medium);">Não há colaboradores ativos para retirada com os filtros aplicados.</p>
+                        <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhum colaborador ativo disponível!</h3>
+                        <p style="color: var(--wsnet-text-medium);">Não há colaboradores ativos que possam retirar neste mês com os filtros aplicados.</p>
                     </div>
                 `;
             } else {
@@ -3640,7 +3758,7 @@
 
             const { quemRetirouId, quemRetirouNome, quemRetirouTipo } = retiradaPendente;
             
-            const dentroPrazo = verificarSeDentroDoPrazo(new Date().toISOString(), mesAtual);
+            const dentroPrazo = verificarSeDentroDoPrazoParaMes(new Date().toISOString(), mesAtual);
             
             const retirada = {
                 colaboradorTitularId: colaboradorSelecionado.id,
@@ -3676,11 +3794,64 @@
             atualizarContadorColaboradores();
         }
 
+        function obterColaboradoresFiltrados() {
+            const empresaSelecionada = document.getElementById('filtroEmpresaColaboradores').value;
+            const cidadeSelecionada = document.getElementById('filtroCidadeColaboradores').value;
+            const statusSelecionado = document.getElementById('filtroStatusColaboradores').value;
+            const search = document.getElementById('searchColaborador').value.toLowerCase();
+            
+            let filtrados = [...colaboradoresLista];
+            
+            if (empresaSelecionada !== 'todas') {
+                filtrados = filtrados.filter(c => c.empresa === empresaSelecionada);
+            }
+            
+            if (cidadeSelecionada !== 'todas') {
+                filtrados = filtrados.filter(c => c.cidade === cidadeSelecionada);
+            }
+            
+            if (statusSelecionado !== 'todos') {
+                filtrados = filtrados.filter(c => c.status === statusSelecionado);
+            }
+            
+            if (search) {
+                filtrados = filtrados.filter(colaborador => 
+                    colaborador.nome.toLowerCase().includes(search) ||
+                    (colaborador.departamento && colaborador.departamento.toLowerCase().includes(search)) ||
+                    (colaborador.empresa && colaborador.empresa.toLowerCase().includes(search)) ||
+                    (colaborador.cidade && colaborador.cidade.toLowerCase().includes(search))
+                );
+            }
+            
+            return filtrados;
+        }
+
+        function atualizarContadorColaboradores() {
+            const colaboradoresFiltrados = obterColaboradoresFiltrados();
+            const contadorElement = document.getElementById('contadorColaboradoresFiltrados');
+            
+            if (contadorElement && colaboradoresLista.length > 0) {
+                const totalFiltrado = colaboradoresFiltrados.length;
+                const totalGeral = colaboradoresLista.length;
+                const ativos = colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length;
+                const inativos = colaboradoresLista.filter(c => c.status === 'inativo').length;
+                
+                if (totalFiltrado === totalGeral) {
+                    contadorElement.textContent = `Total: ${totalGeral} (${ativos} ativos no mês, ${inativos} inativos)`;
+                } else {
+                    contadorElement.textContent = `Mostrando ${totalFiltrado} de ${totalGeral}`;
+                }
+            }
+        }
+
         function renderizarListaColaboradores(colaboradores) {
             const container = document.getElementById('listaColaboradores');
             
             if (colaboradores.length > 0) {
-                const itemsHTML = colaboradores.map(colaborador => `
+                const itemsHTML = colaboradores.map(colaborador => {
+                    const podeRetirarEsteMes = colaborador.status === 'ativo' && colaborador.dataInicio && colaborador.dataInicio <= mesAtual;
+                    
+                    return `
                     <div style="display: flex; align-items: center; padding: 16px; border-bottom: 1px solid var(--wsnet-border);">
                         <div style="flex: 2; display: flex; align-items: center;">
                             <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
@@ -3689,7 +3860,8 @@
                             <div>
                                 <div style="font-weight: 500; color: var(--wsnet-text-dark); margin-bottom: 4px;">${colaborador.nome}</div>
                                 <div style="font-size: 12px; color: var(--wsnet-text-light);">
-                                    ${colaborador.createdAt ? `Criado: ${new Date(colaborador.createdAt).toLocaleDateString('pt-BR')}` : ''}
+                                    ${colaborador.createdAt ? `Cadastrado: ${new Date(colaborador.createdAt).toLocaleDateString('pt-BR')}` : ''} • 
+                                    Início: ${colaborador.dataInicio || 'N/A'}
                                 </div>
                             </div>
                         </div>
@@ -3703,9 +3875,12 @@
                             ${colaborador.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 4px 8px; border-radius: 8px; font-size: 12px;">${colaborador.departamento}</span>` : 'Não informado'}
                         </div>
                         <div style="flex: 1; text-align: center;">
-                            <span class="${colaborador.status === 'ativo' ? 'badge-active' : 'badge-inactive'}" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">
-                                ${colaborador.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                            </span>
+                            ${podeRetirarEsteMes ? 
+                                '<span class="badge-active" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Ativo no mês</span>' :
+                                colaborador.status === 'ativo' ?
+                                '<span class="badge-info" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Início futuro</span>' :
+                                '<span class="badge-inactive" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Inativo</span>'
+                            }
                         </div>
                         <div style="flex: 1; display: flex; gap: 8px; justify-content: center;">
                             <button style="width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0, 102, 204, 0.1); color: var(--wsnet-primary); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="editarColaborador('${colaborador.id}')" title="Editar">
@@ -3716,7 +3891,7 @@
                             </button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
                 
                 container.innerHTML = itemsHTML;
             } else {
@@ -3745,6 +3920,10 @@
             atualizarDepartamentosNosSelects();
             carregarEmpresasSelect();
             
+            // Preencher mês atual como padrão
+            const [anoAtual, mesAtualNum] = mesAtual.split('-');
+            document.getElementById('anoInicioColaborador').value = anoAtual;
+            document.getElementById('mesInicioColaborador').value = mesAtualNum;
             document.getElementById('statusColaborador').value = 'ativo';
             
             dependentesEditando = [];
@@ -3770,6 +3949,13 @@
             carregarEmpresasSelect();
             document.getElementById('empresaColaborador').value = colaborador.empresa || '';
             document.getElementById('cidadeColaborador').value = colaborador.cidade || '';
+            
+            if (colaborador.dataInicio) {
+                const [anoInicio, mesInicio] = colaborador.dataInicio.split('-');
+                document.getElementById('anoInicioColaborador').value = anoInicio;
+                document.getElementById('mesInicioColaborador').value = mesInicio;
+            }
+            
             document.getElementById('statusColaborador').value = colaborador.status || 'ativo';
             
             dependentesEditando = [...(colaborador.dependentes || [])];
@@ -3942,142 +4128,6 @@
             }
         }
 
-        // ==================== NOVO MÊS ====================
-        function abrirModalNovoMes() {
-            const [anoAtual, mesAtualNum] = mesAtual.split('-').map(Number);
-            
-            const meses = [
-                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-            ];
-            
-            document.getElementById('mesAtualLabel').textContent = `${meses[mesAtualNum - 1]} de ${anoAtual}`;
-            
-            let proximoAno = anoAtual;
-            let proximoMes = mesAtualNum + 1;
-            
-            if (proximoMes > 12) {
-                proximoMes = 1;
-                proximoAno++;
-            }
-            
-            document.getElementById('novoMesSelecionado').value = String(proximoMes).padStart(2, '0');
-            document.getElementById('novoAnoSelecionado').value = proximoAno;
-            
-            openModal('modalNovoMes');
-        }
-
-        async function confirmarNovoMes() {
-            const novoMes = document.getElementById('novoMesSelecionado').value;
-            const novoAno = document.getElementById('novoAnoSelecionado').value;
-            
-            if (!novoMes || !novoAno) {
-                showAlert('Selecione o mês e ano para iniciar!', 'error');
-                return;
-            }
-            
-            const novoMesCompleto = `${novoAno}-${novoMes}`;
-            
-            const db = new LocalDatabase();
-            
-            if (retiradasLista.length > 0) {
-                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
-                const [anoAntigo, mesAntigo] = mesAtual.split('-');
-                const meses = [
-                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-                ];
-                
-                const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazo(r.dataRetirada, mesAtual)).length;
-                
-                historico.push({
-                    mes: mesAtual,
-                    mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
-                    totalRetiradas: retiradasLista.length,
-                    dentroPrazo: dentroPrazo,
-                    foraPrazo: retiradasLista.length - dentroPrazo,
-                    taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
-                    totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo').length,
-                    percentual: colaboradoresLista.filter(c => c.status === 'ativo').length > 0 ? 
-                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo').length) * 100).toFixed(1) : 0,
-                    dataEncerramento: new Date().toISOString(),
-                    realizadoPor: currentUser?.email || 'Sistema',
-                    nota: 'As cestas não retiradas NÃO foram marcadas como retiradas - todos ficam como PENDENTES no novo mês'
-                });
-                
-                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
-            }
-            
-            db.setMesAtual(novoMesCompleto);
-            mesAtual = novoMesCompleto;
-            
-            const meses = [
-                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-            ];
-            const mesFormatado = meses[parseInt(novoMes) - 1];
-            
-            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico. Todas as cestas não retiradas permanecem como PENDENTES.`, 'success');
-            
-            closeModal('modalNovoMes');
-            
-            if (escutaRetiradasAtiva) {
-            } else {
-                await carregarRetiradasDoFirebase();
-            }
-            
-            carregarDashboard();
-            carregarRetirada();
-            carregarMesAnoAtual();
-            
-            setTimeout(() => {
-                showAlert('Lembrete: As cestas não retiradas do mês anterior NÃO foram marcadas como retiradas. Todos os colaboradores estão como PENDENTES para o novo mês.', 'info');
-            }, 1000);
-        }
-
-        // ==================== LIMPAR RETIRADAS ====================
-        function abrirModalLimparRetiradas() {
-            document.getElementById('confirmacaoLimpar').value = '';
-            document.getElementById('btnConfirmarLimpeza').disabled = true;
-            
-            document.getElementById('confirmacaoLimpar').addEventListener('input', function() {
-                const btn = document.getElementById('btnConfirmarLimpeza');
-                btn.disabled = this.value.toUpperCase() !== 'LIMPAR';
-            });
-            
-            openModal('modalLimparRetiradas');
-        }
-
-        async function confirmarLimpezaRetiradas() {
-            const confirmacao = document.getElementById('confirmacaoLimpar').value;
-            
-            if (confirmacao.toUpperCase() !== 'LIMPAR') {
-                showAlert('Digite "LIMPAR" para confirmar a ação!', 'error');
-                return;
-            }
-            
-            const sucesso = await limparTodasRetiradasFirebase();
-            if (sucesso) {
-                showAlert('Todas as retiradas foram limpas com sucesso!', 'success');
-                retiradasLista = [];
-                
-                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
-                historico.push({
-                    data: new Date().toISOString(),
-                    acao: 'Limpeza completa de retiradas',
-                    realizadoPor: currentUser?.email || 'Sistema'
-                });
-                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
-                
-                carregarDashboard();
-                carregarRetirada();
-            } else {
-                showAlert('Erro ao limpar as retiradas!', 'error');
-            }
-            
-            closeModal('modalLimparRetiradas');
-        }
-
         // ==================== CORREÇÃO DE RETIRADAS ====================
         async function abrirModalCorrecaoRetirada(colaboradorId) {
             const colaborador = colaboradoresLista.find(c => c.id === colaboradorId);
@@ -4237,7 +4287,7 @@
                 const docRefAntigo = doc(db, "retiradas", retiradaExistenteId);
                 await deleteDoc(docRefAntigo);
                 
-                const dentroPrazo = verificarSeDentroDoPrazo(new Date().toISOString(), mesAtual);
+                const dentroPrazo = verificarSeDentroDoPrazoParaMes(new Date().toISOString(), mesAtual);
                 
                 const novaRetirada = {
                     colaboradorTitularId: colaboradorId,
@@ -4267,6 +4317,139 @@
             
             closeModal('confirmacaoRetirada');
             retiradaPendente = null;
+        }
+
+        // ==================== NOVO MÊS ====================
+        function abrirModalNovoMes() {
+            const [anoAtual, mesAtualNum] = mesAtual.split('-').map(Number);
+            
+            const meses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            
+            document.getElementById('mesAtualLabel').textContent = `${meses[mesAtualNum - 1]} de ${anoAtual}`;
+            
+            let proximoAno = anoAtual;
+            let proximoMes = mesAtualNum + 1;
+            
+            if (proximoMes > 12) {
+                proximoMes = 1;
+                proximoAno++;
+            }
+            
+            document.getElementById('novoMesSelecionado').value = String(proximoMes).padStart(2, '0');
+            document.getElementById('novoAnoSelecionado').value = proximoAno;
+            
+            openModal('modalNovoMes');
+        }
+
+        async function confirmarNovoMes() {
+            const novoMes = document.getElementById('novoMesSelecionado').value;
+            const novoAno = document.getElementById('novoAnoSelecionado').value;
+            
+            if (!novoMes || !novoAno) {
+                showAlert('Selecione o mês e ano para iniciar!', 'error');
+                return;
+            }
+            
+            const novoMesCompleto = `${novoAno}-${novoMes}`;
+            
+            const db = new LocalDatabase();
+            
+            if (retiradasLista.length > 0) {
+                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
+                const [anoAntigo, mesAntigo] = mesAtual.split('-');
+                const meses = [
+                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                ];
+                
+                const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
+                
+                historico.push({
+                    mes: mesAtual,
+                    mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
+                    totalRetiradas: retiradasLista.length,
+                    dentroPrazo: dentroPrazo,
+                    foraPrazo: retiradasLista.length - dentroPrazo,
+                    taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
+                    totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length,
+                    percentual: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length > 0 ? 
+                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length) * 100).toFixed(1) : 0,
+                    dataEncerramento: new Date().toISOString(),
+                    realizadoPor: currentUser?.email || 'Sistema',
+                    nota: 'As cestas não retiradas NÃO foram marcadas como retiradas - todos os colaboradores com data de início válida ficam como PENDENTES no novo mês'
+                });
+                
+                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
+            }
+            
+            db.setMesAtual(novoMesCompleto);
+            mesAtual = novoMesCompleto;
+            
+            const meses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            const mesFormatado = meses[parseInt(novoMes) - 1];
+            
+            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico.`, 'success');
+            
+            closeModal('modalNovoMes');
+            
+            carregarConfiguracaoPrazoParaMes();
+            await carregarRetiradasDoFirebase();
+            carregarDashboard();
+            carregarRetirada();
+            carregarMesAnoAtual();
+            
+            setTimeout(() => {
+                showAlert('Lembrete: Apenas colaboradores com data de início menor ou igual ao novo mês aparecerão como PENDENTES.', 'info');
+            }, 1000);
+        }
+
+        // ==================== LIMPAR RETIRADAS ====================
+        function abrirModalLimparRetiradas() {
+            document.getElementById('confirmacaoLimpar').value = '';
+            document.getElementById('btnConfirmarLimpeza').disabled = true;
+            
+            document.getElementById('confirmacaoLimpar').addEventListener('input', function() {
+                const btn = document.getElementById('btnConfirmarLimpeza');
+                btn.disabled = this.value.toUpperCase() !== 'LIMPAR';
+            });
+            
+            openModal('modalLimparRetiradas');
+        }
+
+        async function confirmarLimpezaRetiradas() {
+            const confirmacao = document.getElementById('confirmacaoLimpar').value;
+            
+            if (confirmacao.toUpperCase() !== 'LIMPAR') {
+                showAlert('Digite "LIMPAR" para confirmar a ação!', 'error');
+                return;
+            }
+            
+            const sucesso = await limparTodasRetiradasFirebase();
+            if (sucesso) {
+                showAlert('Todas as retiradas foram limpas com sucesso!', 'success');
+                retiradasLista = [];
+                
+                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
+                historico.push({
+                    data: new Date().toISOString(),
+                    acao: 'Limpeza completa de retiradas',
+                    realizadoPor: currentUser?.email || 'Sistema'
+                });
+                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
+                
+                carregarDashboard();
+                carregarRetirada();
+            } else {
+                showAlert('Erro ao limpar as retiradas!', 'error');
+            }
+            
+            closeModal('modalLimparRetiradas');
         }
 
         // ==================== RELATÓRIOS ====================
@@ -4373,7 +4556,12 @@
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.cidade === cidadeSelecionada);
                 }
                 
-                const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+                // Filtrar colaboradores que já podiam retirar neste mês (data de início <= mês do relatório)
+                const colaboradoresAtivos = colaboradoresFiltrados.filter(c => 
+                    c.status === 'ativo' && 
+                    c.dataInicio && 
+                    c.dataInicio <= mesSelecionado
+                );
                 
                 let retiradasFiltradas = retiradasMes.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
@@ -4642,7 +4830,7 @@
                     currentY += 14;
                 }
                 
-                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Status', 'Dependentes', 'Data Cadastro']];
+                const headers = [['#', 'Nome', 'Empresa', 'Cidade', 'Departamento', 'Status', 'Mês Início', 'Dependentes', 'Data Cadastro']];
                 
                 const data = colaboradoresFiltrados.map((colab, index) => [
                     index + 1,
@@ -4651,6 +4839,7 @@
                     colab.cidade || '',
                     colab.departamento || '',
                     colab.status === 'ativo' ? 'Ativo' : 'Inativo',
+                    colab.dataInicio || 'N/A',
                     (colab.dependentes?.length || 0).toString(),
                     colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : 'N/A'
                 ]);
@@ -4664,13 +4853,14 @@
                     styles: { fontSize: 9 },
                     columnStyles: {
                         0: { cellWidth: 15 },
-                        1: { cellWidth: 60 },
-                        2: { cellWidth: 40 },
-                        3: { cellWidth: 30 },
-                        4: { cellWidth: 40 },
-                        5: { cellWidth: 25 },
+                        1: { cellWidth: 55 },
+                        2: { cellWidth: 35 },
+                        3: { cellWidth: 25 },
+                        4: { cellWidth: 35 },
+                        5: { cellWidth: 20 },
                         6: { cellWidth: 25 },
-                        7: { cellWidth: 30 }
+                        7: { cellWidth: 20 },
+                        8: { cellWidth: 25 }
                     }
                 });
                 
@@ -4727,6 +4917,7 @@
                         'Cidade': colab.cidade || '',
                         'Departamento': colab.departamento || '',
                         'Status': colab.status === 'ativo' ? 'Ativo' : 'Inativo',
+                        'Mês Início': colab.dataInicio || 'N/A',
                         'Total Dependentes': dependentes.length,
                         'Dependentes': dependentesStr,
                         'Data Cadastro': colab.createdAt ? new Date(colab.createdAt).toLocaleDateString('pt-BR') : '',
@@ -4761,6 +4952,7 @@
                     { wch: 15 },  // Cidade
                     { wch: 20 },  // Departamento
                     { wch: 10 },  // Status
+                    { wch: 10 },  // Mês Início
                     { wch: 15 },  // Total Dependentes
                     { wch: 40 },  // Dependentes
                     { wch: 15 },  // Data Cadastro
@@ -4840,7 +5032,7 @@
                 const foraPrazo = document.getElementById('relatorioForaPrazo').textContent;
                 const conformidade = document.getElementById('relatorioConformidade').textContent;
                 
-                doc.text(`Total de Colaboradores Ativos: ${totalColaboradores}`, marginLeft, currentY);
+                doc.text(`Total de Colaboradores Ativos no Período: ${totalColaboradores}`, marginLeft, currentY);
                 currentY += 7;
                 doc.text(`Retiradas Realizadas: ${totalRetiradas}`, marginLeft, currentY);
                 currentY += 7;
@@ -4863,7 +5055,12 @@
                     colaboradoresFiltrados = colaboradoresFiltrados.filter(c => c.cidade === cidadeSelecionada);
                 }
                 
-                const colaboradoresAtivos = colaboradoresFiltrados.filter(c => c.status === 'ativo');
+                // Filtrar colaboradores que já podiam retirar neste mês
+                const colaboradoresAtivos = colaboradoresFiltrados.filter(c => 
+                    c.status === 'ativo' && 
+                    c.dataInicio && 
+                    c.dataInicio <= mesReferencia
+                );
                 
                 let retiradasFiltradas = retiradasMes.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
@@ -5133,7 +5330,7 @@
                         showMainApp();
                         console.log('Login automático realizado com sucesso!');
                         
-                        carregarConfiguracaoPrazo();
+                        carregarConfiguracaoPrazoParaMes();
                         
                         setTimeout(() => {
                             try {
