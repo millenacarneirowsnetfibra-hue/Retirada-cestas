@@ -1409,9 +1409,9 @@
                             <div class="filter-group">
                                 <label class="form-label">Filtrar por Status:</label>
                                 <select class="form-control" id="filtroStatusColaboradores" onchange="filtrarColaboradores()">
-                                    <option value="todos">Todos os Status</option>
                                     <option value="ativo">Apenas Ativos</option>
                                     <option value="inativo">Apenas Inativos</option>
+                                    <option value="todos">Todos os Status</option>
                                 </select>
                             </div>
                             <div class="filter-group">
@@ -1448,7 +1448,7 @@
                                 <div style="text-align: center; padding: 40px;">
                                     <span class="material-icons" style="font-size: 48px; color: var(--wsnet-border); opacity: 0.5;">group</span>
                                     <p style="color: var(--wsnet-text-light); margin-top: 16px;">
-                                        Nenhum colaborador cadastrado.
+                                        Carregando colaboradores...
                                     </p>
                                 </div>
                             </div>
@@ -3810,9 +3810,12 @@
                 filtrados = filtrados.filter(c => c.cidade === cidadeSelecionada);
             }
             
-            if (statusSelecionado !== 'todos') {
-                filtrados = filtrados.filter(c => c.status === statusSelecionado);
+            if (statusSelecionado === 'ativo') {
+                filtrados = filtrados.filter(c => c.status === 'ativo');
+            } else if (statusSelecionado === 'inativo') {
+                filtrados = filtrados.filter(c => c.status === 'inativo');
             }
+            // Se for 'todos', não filtra por status
             
             if (search) {
                 filtrados = filtrados.filter(colaborador => 
@@ -3833,11 +3836,11 @@
             if (contadorElement && colaboradoresLista.length > 0) {
                 const totalFiltrado = colaboradoresFiltrados.length;
                 const totalGeral = colaboradoresLista.length;
-                const ativos = colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length;
+                const ativos = colaboradoresLista.filter(c => c.status === 'ativo').length;
                 const inativos = colaboradoresLista.filter(c => c.status === 'inativo').length;
                 
                 if (totalFiltrado === totalGeral) {
-                    contadorElement.textContent = `Total: ${totalGeral} (${ativos} ativos no mês, ${inativos} inativos)`;
+                    contadorElement.textContent = `Total: ${totalGeral} (${ativos} ativos, ${inativos} inativos)`;
                 } else {
                     contadorElement.textContent = `Mostrando ${totalFiltrado} de ${totalGeral}`;
                 }
@@ -3875,10 +3878,8 @@
                             ${colaborador.departamento ? `<span style="background: rgba(0, 204, 102, 0.1); color: var(--wsnet-success); padding: 4px 8px; border-radius: 8px; font-size: 12px;">${colaborador.departamento}</span>` : 'Não informado'}
                         </div>
                         <div style="flex: 1; text-align: center;">
-                            ${podeRetirarEsteMes ? 
-                                '<span class="badge-active" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Ativo no mês</span>' :
-                                colaborador.status === 'ativo' ?
-                                '<span class="badge-info" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Início futuro</span>' :
+                            ${colaborador.status === 'ativo' ? 
+                                '<span class="badge-active" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Ativo</span>' :
                                 '<span class="badge-inactive" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Inativo</span>'
                             }
                         </div>
@@ -3899,7 +3900,7 @@
                     <div style="text-align: center; padding: 40px;">
                         <span class="material-icons" style="font-size: 48px; color: var(--wsnet-border); opacity: 0.5;">group</span>
                         <h3 style="margin: 20px 0 10px 0; color: var(--wsnet-text-dark);">Nenhum colaborador encontrado</h3>
-                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' || document.getElementById('filtroStatusColaboradores').value !== 'todos' ? 'Tente mudar os filtros de empresa, cidade ou status.' : 'Clique em "Novo Colaborador" para começar.'}</p>
+                        <p style="color: var(--wsnet-text-medium);">${document.getElementById('filtroEmpresaColaboradores').value !== 'todas' || document.getElementById('filtroCidadeColaboradores').value !== 'todas' || document.getElementById('filtroStatusColaboradores').value !== 'ativo' ? 'Tente mudar os filtros de empresa, cidade ou status.' : 'Clique em "Novo Colaborador" para começar.'}</p>
                     </div>
                 `;
             }
@@ -4820,7 +4821,7 @@
                 let filtrosInfo = '';
                 if (empresaFiltro !== 'todas') filtrosInfo += `Empresa: ${empresaFiltro} `;
                 if (cidadeFiltro !== 'todas') filtrosInfo += `Cidade: ${cidadeFiltro} `;
-                if (statusFiltro !== 'todos') filtrosInfo += `Status: ${statusFiltro} `;
+                if (statusFiltro !== 'ativo') filtrosInfo += `Status: ${statusFiltro} `;
                 if (buscaFiltro) filtrosInfo += `Busca: "${buscaFiltro}"`;
                 
                 if (filtrosInfo) {
@@ -4928,11 +4929,11 @@
 
                 const ws = XLSX.utils.json_to_sheet(dados);
                 
-                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || statusFiltro !== 'todos' || buscaFiltro) {
+                if (empresaFiltro !== 'todas' || cidadeFiltro !== 'todas' || statusFiltro !== 'ativo' || buscaFiltro) {
                     const infoFiltros = [];
                     if (empresaFiltro !== 'todas') infoFiltros.push(`Empresa: ${empresaFiltro}`);
                     if (cidadeFiltro !== 'todas') infoFiltros.push(`Cidade: ${cidadeFiltro}`);
-                    if (statusFiltro !== 'todos') infoFiltros.push(`Status: ${statusFiltro}`);
+                    if (statusFiltro !== 'ativo') infoFiltros.push(`Status: ${statusFiltro}`);
                     if (buscaFiltro) infoFiltros.push(`Busca: "${buscaFiltro}"`);
                     
                     const infoRow = [
