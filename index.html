@@ -660,6 +660,53 @@
             border: 1px solid var(--wsnet-border);
         }
 
+        /* Datas específicas */
+        .datas-especificas {
+            background: var(--wsnet-bg-card);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px dashed var(--wsnet-primary-light);
+        }
+
+        .datas-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .data-tag {
+            background: var(--wsnet-primary);
+            color: white;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .data-tag .material-icons {
+            font-size: 16px;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        .data-tag .material-icons:hover {
+            opacity: 1;
+        }
+
+        .data-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .data-input-group .form-control {
+            flex: 1;
+        }
+
         /* Modals */
         .modal {
             display: none;
@@ -1832,7 +1879,7 @@
             <div class="modal-body">
                 <div class="alert alert-info" style="display: block; margin-bottom: 20px;">
                     <span class="material-icons" style="vertical-align: middle;">info</span>
-                    Configure os dias e horários permitidos para retirada para cada mês. Cada mês mantém sua configuração salva para consulta em relatórios.
+                    Configure as datas específicas de retirada para cada mês. Apenas as datas selecionadas serão consideradas dentro do prazo.
                 </div>
 
                 <div class="form-group">
@@ -1866,30 +1913,25 @@
                         Configuração para <span id="mesAnoSelecionado"></span>
                     </h4>
 
-                    <div class="form-group">
-                        <label class="form-label">Dias da Semana Permitidos:</label>
-                        <div class="dias-semana">
-                            <label class="dia-checkbox">
-                                <input type="checkbox" id="diaSegunda" value="1" checked> Segunda
-                            </label>
-                            <label class="dia-checkbox">
-                                <input type="checkbox" id="diaTerca" value="2" checked> Terça
-                            </label>
-                            <label class="dia-checkbox">
-                                <input type="checkbox" id="diaQuarta" value="3" checked> Quarta
-                            </label>
-                            <label class="dia-checkbox">
-                                <input type="checkbox" id="diaQuinta" value="4" checked> Quinta
-                            </label>
-                            <label class="dia-checkbox">
-                                <input type="checkbox" id="diaSexta" value="5" checked> Sexta
-                            </label>
-                            <label class="dia-checkbox">
-                                <input type="checkbox" id="diaSabado" value="6"> Sábado
-                            </label>
-                            <label class="dia-checkbox">
-                                <input type="checkbox" id="diaDomingo" value="0"> Domingo
-                            </label>
+                    <div class="datas-especificas">
+                        <div class="form-group">
+                            <label class="form-label">Datas Específicas Permitidas para Retirada:</label>
+                            <p style="font-size: 13px; color: var(--wsnet-text-medium); margin-bottom: 15px;">
+                                Selecione os dias do mês em que as retiradas serão permitidas.
+                            </p>
+                            
+                            <div id="datasSelecionadas" class="datas-container"></div>
+                            
+                            <div class="data-input-group">
+                                <select class="form-control" id="diaSelecionado">
+                                    <option value="">Selecione um dia...</option>
+                                    <!-- Preenchido via JavaScript -->
+                                </select>
+                                <button type="button" class="btn btn-primary" onclick="adicionarDataConfiguracao()">
+                                    <span class="material-icons">add</span>
+                                    Adicionar Data
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1904,34 +1946,9 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Dias para Retirada (após início do mês):</label>
-                        <select class="form-control" id="diasRetirada">
-                            <option value="1">1 dia</option>
-                            <option value="2">2 dias</option>
-                            <option value="3" selected>3 dias</option>
-                            <option value="4">4 dias</option>
-                            <option value="5">5 dias</option>
-                            <option value="6">6 dias</option>
-                            <option value="7">7 dias</option>
-                            <option value="10">10 dias</option>
-                            <option value="15">15 dias</option>
-                            <option value="30">30 dias</option>
-                        </select>
-                        <small style="color: var(--wsnet-text-medium);">Dias corridos a partir do 1º dia do mês</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Considerar Apenas Dias Úteis:</label>
-                        <select class="form-control" id="considerarDiasUteis">
-                            <option value="sim">Sim (contar apenas dias úteis)</option>
-                            <option value="nao">Não (contar todos os dias)</option>
-                        </select>
-                    </div>
-
                     <div class="alert alert-warning" style="display: block; margin-top: 20px;">
                         <span class="material-icons" style="vertical-align: middle;">warning</span>
-                        Esta configuração será aplicada apenas para o mês selecionado e ficará salva para consulta em relatórios.
+                        As retiradas serão consideradas DENTRO DO PRAZO apenas nas datas selecionadas e dentro do horário configurado.
                     </div>
                 </div>
             </div>
@@ -2097,7 +2114,7 @@
     </div>
 
     <script>
-        // ==================== SISTEMA COMPLETO COM CONFIGURAÇÃO POR MÊS ====================
+        // ==================== SISTEMA COMPLETO COM CONFIGURAÇÃO POR MÊS (DATAS ESPECÍFICAS) ====================
         let currentUser = null;
         let colaboradorSelecionado = null;
         let dependentesEditando = [];
@@ -2118,6 +2135,11 @@
             jaRetiraram: [],
             naoRetiraram: [],
             retiradas: []
+        };
+        let configuracaoAtual = {
+            datasPermitidas: [],
+            horaInicio: '08:00',
+            horaFim: '18:00'
         };
         
         let mesAtual = null;
@@ -2333,7 +2355,7 @@
             }
         }
 
-        // ==================== FUNÇÕES DE PRAZO POR MÊS ====================
+        // ==================== FUNÇÕES DE PRAZO POR MÊS (DATAS ESPECÍFICAS) ====================
         function obterConfiguracaoPrazoParaMes(mesReferencia) {
             const db = new LocalDatabase();
             const configSalva = db.getConfiguracaoPrazoPorMes(mesReferencia);
@@ -2342,13 +2364,11 @@
                 return configSalva;
             }
             
-            // Configuração padrão
+            // Configuração padrão - sem datas específicas
             return {
-                diasPermitidos: [1, 2, 3, 4, 5],
+                datasPermitidas: [],
                 horaInicio: '08:00',
-                horaFim: '18:00',
-                diasRetirada: 3,
-                considerarDiasUteis: true
+                horaFim: '18:00'
             };
         }
 
@@ -2356,17 +2376,24 @@
             if (!mesAtual) return;
             
             const config = obterConfiguracaoPrazoParaMes(mesAtual);
+            configuracaoAtual = config;
             
             // Atualizar informações na interface
             const prazoInfo = document.getElementById('prazoInfo');
             const prazoInfoRetirada = document.getElementById('prazoInfoRetirada');
             
             if (prazoInfo) {
-                prazoInfo.textContent = `Prazo: ${config.diasRetirada} dias ${config.considerarDiasUteis ? 'úteis' : 'corridos'} das ${config.horaInicio} às ${config.horaFim}`;
+                const diasInfo = config.datasPermitidas && config.datasPermitidas.length > 0 
+                    ? `Dias: ${config.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
+                    : 'Nenhuma data configurada';
+                prazoInfo.textContent = `${diasInfo} • Horário: ${config.horaInicio} às ${config.horaFim}`;
             }
             
             if (prazoInfoRetirada) {
-                prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> Prazo: ${config.diasRetirada} dias ${config.considerarDiasUteis ? 'úteis' : 'corridos'} das ${config.horaInicio} às ${config.horaFim}`;
+                const diasInfo = config.datasPermitidas && config.datasPermitidas.length > 0 
+                    ? `Dias: ${config.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
+                    : 'Nenhuma data configurada';
+                prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> ${diasInfo} • ${config.horaInicio} às ${config.horaFim}`;
             }
             
             return config;
@@ -2376,9 +2403,14 @@
             const data = new Date(dataRetirada);
             const config = obterConfiguracaoPrazoParaMes(mesReferencia);
             
-            // 1. Verificar dia da semana
-            const diaSemana = data.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
-            if (!config.diasPermitidos.includes(diaSemana)) {
+            // Se não há datas configuradas, considera que não há prazo definido
+            if (!config.datasPermitidas || config.datasPermitidas.length === 0) {
+                return true; // Sem restrição de datas
+            }
+            
+            // 1. Verificar se a data está entre as permitidas
+            const dia = data.getDate();
+            if (!config.datasPermitidas.includes(dia)) {
                 return false;
             }
             
@@ -2396,29 +2428,7 @@
                 return false;
             }
             
-            // 3. Verificar dias desde o início do mês
-            const [ano, mes] = mesReferencia.split('-').map(Number);
-            const primeiroDiaMes = new Date(ano, mes - 1, 1);
-            
-            const diferencaDias = Math.floor((data - primeiroDiaMes) / (1000 * 60 * 60 * 24));
-            
-            if (config.considerarDiasUteis) {
-                // Contar apenas dias úteis
-                let diasUteis = 0;
-                let dataAtual = new Date(primeiroDiaMes);
-                
-                while (dataAtual < data) {
-                    const diaSemanaAtual = dataAtual.getDay();
-                    if (diaSemanaAtual !== 0 && diaSemanaAtual !== 6) { // Não é sábado nem domingo
-                        diasUteis++;
-                    }
-                    dataAtual.setDate(dataAtual.getDate() + 1);
-                }
-                
-                return diasUteis <= config.diasRetirada;
-            } else {
-                return diferencaDias <= config.diasRetirada;
-            }
+            return true;
         }
 
         function openConfigurarPrazo() {
@@ -2451,19 +2461,72 @@
             // Carregar valores nos campos
             document.getElementById('horaInicio').value = config.horaInicio;
             document.getElementById('horaFim').value = config.horaFim;
-            document.getElementById('diasRetirada').value = config.diasRetirada;
-            document.getElementById('considerarDiasUteis').value = config.considerarDiasUteis ? 'sim' : 'nao';
             
-            // Marcar dias da semana
-            const dias = ['diaDomingo', 'diaSegunda', 'diaTerca', 'diaQuarta', 'diaQuinta', 'diaSexta', 'diaSabado'];
-            dias.forEach((dia, index) => {
-                const checkbox = document.getElementById(dia);
-                if (checkbox) {
-                    checkbox.checked = config.diasPermitidos.includes(index);
-                }
-            });
+            // Carregar datas selecionadas
+            configuracaoAtual = {
+                datasPermitidas: config.datasPermitidas || [],
+                horaInicio: config.horaInicio,
+                horaFim: config.horaFim
+            };
+            
+            atualizarDatasUI();
+            atualizarSelectDias(mes, ano);
             
             document.getElementById('configuracoesSalvas').style.display = 'block';
+        }
+
+        function atualizarSelectDias(mes, ano) {
+            const select = document.getElementById('diaSelecionado');
+            const diasNoMes = new Date(ano, mes, 0).getDate();
+            
+            let options = '<option value="">Selecione um dia...</option>';
+            for (let i = 1; i <= diasNoMes; i++) {
+                options += `<option value="${i}">Dia ${i}</option>`;
+            }
+            select.innerHTML = options;
+        }
+
+        function atualizarDatasUI() {
+            const container = document.getElementById('datasSelecionadas');
+            
+            if (configuracaoAtual.datasPermitidas && configuracaoAtual.datasPermitidas.length > 0) {
+                const datasOrdenadas = [...configuracaoAtual.datasPermitidas].sort((a, b) => a - b);
+                container.innerHTML = datasOrdenadas.map(dia => `
+                    <div class="data-tag">
+                        <span>Dia ${dia}</span>
+                        <span class="material-icons" onclick="removerDataConfiguracao(${dia})">close</span>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p style="color: var(--wsnet-text-light);">Nenhuma data selecionada. Adicione as datas permitidas para retirada.</p>';
+            }
+        }
+
+        function adicionarDataConfiguracao() {
+            const dia = parseInt(document.getElementById('diaSelecionado').value);
+            
+            if (!dia) {
+                showAlert('Selecione um dia!', 'error');
+                return;
+            }
+            
+            if (!configuracaoAtual.datasPermitidas) {
+                configuracaoAtual.datasPermitidas = [];
+            }
+            
+            if (configuracaoAtual.datasPermitidas.includes(dia)) {
+                showAlert('Este dia já foi adicionado!', 'error');
+                return;
+            }
+            
+            configuracaoAtual.datasPermitidas.push(dia);
+            atualizarDatasUI();
+            document.getElementById('diaSelecionado').value = '';
+        }
+
+        function removerDataConfiguracao(dia) {
+            configuracaoAtual.datasPermitidas = configuracaoAtual.datasPermitidas.filter(d => d !== dia);
+            atualizarDatasUI();
         }
 
         function salvarConfiguracaoPrazoMensal() {
@@ -2475,28 +2538,15 @@
                 return;
             }
             
-            // Coletar dias permitidos
-            const diasPermitidos = [];
-            const dias = ['diaDomingo', 'diaSegunda', 'diaTerca', 'diaQuarta', 'diaQuinta', 'diaSexta', 'diaSabado'];
-            
-            dias.forEach((dia, index) => {
-                const checkbox = document.getElementById(dia);
-                if (checkbox && checkbox.checked) {
-                    diasPermitidos.push(index);
-                }
-            });
-            
-            if (diasPermitidos.length === 0) {
-                showAlert('Selecione pelo menos um dia da semana!', 'error');
+            if (!configuracaoAtual.datasPermitidas || configuracaoAtual.datasPermitidas.length === 0) {
+                showAlert('Selecione pelo menos uma data para retirada!', 'error');
                 return;
             }
             
             const novaConfig = {
-                diasPermitidos: diasPermitidos,
+                datasPermitidas: configuracaoAtual.datasPermitidas,
                 horaInicio: document.getElementById('horaInicio').value,
-                horaFim: document.getElementById('horaFim').value,
-                diasRetirada: parseInt(document.getElementById('diasRetirada').value),
-                considerarDiasUteis: document.getElementById('considerarDiasUteis').value === 'sim'
+                horaFim: document.getElementById('horaFim').value
             };
             
             const mesReferencia = `${ano}-${mes}`;
