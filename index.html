@@ -23,9 +23,7 @@
             updateDoc,
             deleteDoc,
             doc,
-            onSnapshot,
-            orderBy,
-            limit
+            onSnapshot
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -42,7 +40,7 @@
 
         // Exportar funções Firebase para uso global
         window.firebaseDb = db;
-        window.firebaseCollections = { collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc, onSnapshot, orderBy, limit };
+        window.firebaseCollections = { collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc, onSnapshot };
         window.firebaseInitialized = true;
     </script>
     <style>
@@ -1218,12 +1216,26 @@
                     </div>
                     
                     <div class="admin-actions" id="adminButtons">
-                        <!-- Botões removidos -->
+                        <button type="button" class="btn btn-warning btn-sm" onclick="abrirModalNovoMes()">
+                            <span class="material-icons">event_note</span>
+                            Novo Mês
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="abrirModalLimparRetiradas()">
+                            <span class="material-icons">delete_sweep</span>
+                            Limpar Retiradas
+                        </button>
                     </div>
                     
                     <!-- Mobile Actions -->
                     <div class="mobile-actions">
-                        <!-- Botões removidos -->
+                        <button type="button" class="btn btn-warning btn-sm mobile-action-btn" onclick="abrirModalNovoMes()">
+                            <span class="material-icons">event_note</span>
+                            Novo Mês
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm mobile-action-btn" onclick="abrirModalLimparRetiradas()">
+                            <span class="material-icons">delete_sweep</span>
+                            Limpar
+                        </button>
                     </div>
                 </div>
 
@@ -1536,6 +1548,14 @@
                                     <option value="Itanhaém">Itanhaém</option>
                                     <option value="Mongaguá">Mongaguá</option>
                                     <option value="Peruíbe">Peruíbe</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="form-label">Conformidade:</label>
+                                <select class="form-control" id="conformidadeRelatorio" onchange="filtrarRelatorioPorConformidade()">
+                                    <option value="todos">Todos</option>
+                                    <option value="dentro">Dentro do Prazo</option>
+                                    <option value="fora">Fora do Prazo</option>
                                 </select>
                             </div>
                             <div class="filter-group" style="align-self: flex-end;">
@@ -1905,6 +1925,7 @@
                             <div class="data-input-group">
                                 <select class="form-control" id="diaSelecionado">
                                     <option value="">Selecione um dia...</option>
+                                    <!-- Preenchido via JavaScript -->
                                 </select>
                                 <button type="button" class="btn btn-primary" onclick="adicionarDataConfiguracao()">
                                     <span class="material-icons">add</span>
@@ -1934,6 +1955,102 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline" onclick="closeModal('modalConfigurarPrazo')">Cancelar</button>
                 <button type="button" class="btn btn-primary" onclick="salvarConfiguracaoPrazoMensal()" id="btnSalvarConfiguracao">Salvar Configuração do Mês</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Iniciar Novo Mês -->
+    <div id="modalNovoMes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Iniciar Novo Mês</h3>
+                <span class="material-icons" style="cursor: pointer;" onclick="closeModal('modalNovoMes')">close</span>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: var(--wsnet-text-medium);">Ao iniciar um novo mês, o sistema irá:</p>
+                <ul style="margin-bottom: 20px; padding-left: 20px; color: var(--wsnet-text-medium);">
+                    <li>Salvar todas as retiradas do mês atual no histórico</li>
+                    <li>Manter a configuração de prazo do mês atual salva para consultas</li>
+                    <li>NÃO marcar cestas não retiradas como retiradas</li>
+                    <li>Manter todas as retiradas existentes no histórico</li>
+                    <li>Manter todos os colaboradores e dependentes</li>
+                    <li>Todos os colaboradores ativos com data de início menor ou igual ao novo mês ficarão como PENDENTES</li>
+                </ul>
+                
+                <div class="form-group">
+                    <label class="form-label">Mês Atual (que será fechado):</label>
+                    <div style="padding: 12px; background: var(--wsnet-bg-light); border-radius: var(--radius-md); color: var(--wsnet-primary-dark);">
+                        <strong id="mesAtualLabel"></strong>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Selecione o Próximo Mês:</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <select class="form-control" style="flex: 1; min-width: 150px;" id="novoMesSelecionado">
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                        <input type="number" class="form-control" style="flex: 1; min-width: 120px;" id="novoAnoSelecionado" placeholder="2025" min="2020" max="2100">
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning" style="display: block; margin-top: 20px;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</span>
+                    <strong>Importante:</strong> As cestas não retiradas NÃO serão marcadas como retiradas. Apenas colaboradores ativos com data de início menor ou igual ao novo mês aparecerão como PENDENTES.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalNovoMes')">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarNovoMes()">Iniciar Novo Mês</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Limpar Retiradas -->
+    <div id="modalLimparRetiradas" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Limpar Todas as Retiradas</h3>
+                <span class="material-icons" style="cursor: pointer;" onclick="closeModal('modalLimparRetiradas')">close</span>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" style="display: block; margin-bottom: 20px; padding: 16px; border-radius: var(--radius-md);">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 8px; color: var(--wsnet-warning);">warning</span>
+                    <strong>ATENÇÃO:</strong> Esta ação não pode ser desfeita!
+                </div>
+                
+                <p style="margin-bottom: 15px; color: var(--wsnet-text-medium);">Ao limpar as retiradas, o sistema irá:</p>
+                <ul style="margin-bottom: 20px; padding-left: 20px; color: var(--wsnet-text-medium);">
+                    <li><strong>Apagar TODAS as retiradas registradas</strong></li>
+                    <li><strong>Limpar todo o histórico de retiradas</strong></li>
+                    <li>Manter todos os colaboradores cadastrados</li>
+                    <li>Manter todos os departamentos e empresas</li>
+                    <li>Manter as configurações de prazo por mês</li>
+                    <li>Todos os colaboradores com data de início válida ficarão como PENDENTES</li>
+                </ul>
+                
+                <div class="form-group">
+                    <label class="form-label">Digite "LIMPAR" para confirmar:</label>
+                    <input type="text" class="form-control" id="confirmacaoLimpar" placeholder="Digite LIMPAR aqui" style="text-transform: uppercase;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalLimparRetiradas')">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarLimpezaRetiradas()" id="btnConfirmarLimpeza" disabled>
+                    <span class="material-icons">delete_forever</span>
+                    Limpar Tudo
+                </button>
             </div>
         </div>
     </div>
@@ -1998,9 +2115,6 @@
 
     <script>
         // ==================== SISTEMA COMPLETO COM CONFIGURAÇÃO POR MÊS (DATAS ESPECÍFICAS) ====================
-        // REMOVIDOS: Modal Novo Mês, Modal Limpar Retiradas e todas as funções relacionadas
-        // MANTIDAS: Todas as demais funcionalidades com sincronização em tempo real
-        
         let currentUser = null;
         let colaboradorSelecionado = null;
         let dependentesEditando = [];
@@ -2084,6 +2198,10 @@
                 
                 if (!localStorage.getItem('configuracoesPrazoMensal')) {
                     localStorage.setItem('configuracoesPrazoMensal', JSON.stringify({}));
+                }
+                
+                if (!localStorage.getItem('historicoRetiradas')) {
+                    localStorage.setItem('historicoRetiradas', JSON.stringify([]));
                 }
                 
                 this.initUsuarios();
@@ -3007,6 +3125,25 @@
             }
         }
 
+        async function limparTodasRetiradasFirebase() {
+            try {
+                const db = window.firebaseDb;
+                const { collection, getDocs, deleteDoc, doc } = window.firebaseCollections;
+                
+                const querySnapshot = await getDocs(collection(db, "retiradas"));
+                const deletePromises = [];
+                querySnapshot.forEach((document) => {
+                    deletePromises.push(deleteDoc(doc(db, "retiradas", document.id)));
+                });
+                
+                await Promise.all(deletePromises);
+                return true;
+            } catch (erro) {
+                console.error("Erro ao limpar retiradas:", erro);
+                return false;
+            }
+        }
+
         // ==================== FUNÇÕES FIREBASE PARA DEPARTAMENTOS ====================
         async function carregarDepartamentosDoFirebase() {
             try {
@@ -3350,6 +3487,8 @@
                 c.dataInicio && 
                 c.dataInicio <= mesAtual
             );
+            
+            const colaboradoresInativos = colaboradoresFiltrados.filter(c => c.status === 'inativo');
             
             const retiradasFiltradas = retiradasLista.filter(r => {
                 const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
@@ -4228,6 +4367,140 @@
             retiradaPendente = null;
         }
 
+        // ==================== NOVO MÊS ====================
+        function abrirModalNovoMes() {
+            const [anoAtual, mesAtualNum] = mesAtual.split('-').map(Number);
+            
+            const meses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            
+            document.getElementById('mesAtualLabel').textContent = `${meses[mesAtualNum - 1]} de ${anoAtual}`;
+            
+            let proximoAno = anoAtual;
+            let proximoMes = mesAtualNum + 1;
+            
+            if (proximoMes > 12) {
+                proximoMes = 1;
+                proximoAno++;
+            }
+            
+            document.getElementById('novoMesSelecionado').value = String(proximoMes).padStart(2, '0');
+            document.getElementById('novoAnoSelecionado').value = proximoAno;
+            
+            openModal('modalNovoMes');
+        }
+
+        async function confirmarNovoMes() {
+            const novoMes = document.getElementById('novoMesSelecionado').value;
+            const novoAno = document.getElementById('novoAnoSelecionado').value;
+            
+            if (!novoMes || !novoAno) {
+                showAlert('Selecione o mês e ano para iniciar!', 'error');
+                return;
+            }
+            
+            const novoMesCompleto = `${novoAno}-${novoMes}`;
+            
+            const db = new LocalDatabase();
+            
+            if (retiradasLista.length > 0) {
+                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
+                const [anoAntigo, mesAntigo] = mesAtual.split('-');
+                const meses = [
+                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                ];
+                
+                // Calcular dentro/fora do prazo usando a configuração DO MÊS ANTIGO
+                const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
+                
+                historico.push({
+                    mes: mesAtual,
+                    mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
+                    totalRetiradas: retiradasLista.length,
+                    dentroPrazo: dentroPrazo,
+                    foraPrazo: retiradasLista.length - dentroPrazo,
+                    taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
+                    totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length,
+                    percentual: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length > 0 ? 
+                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length) * 100).toFixed(1) : 0,
+                    dataEncerramento: new Date().toISOString(),
+                    realizadoPor: currentUser?.email || 'Sistema',
+                    nota: 'As cestas não retiradas NÃO foram marcadas como retiradas - todos os colaboradores com data de início válida ficam como PENDENTES no novo mês'
+                });
+                
+                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
+            }
+            
+            db.setMesAtual(novoMesCompleto);
+            mesAtual = novoMesCompleto;
+            
+            const meses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            const mesFormatado = meses[parseInt(novoMes) - 1];
+            
+            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico.`, 'success');
+            
+            closeModal('modalNovoMes');
+            
+            carregarConfiguracaoPrazoParaMes();
+            await carregarRetiradasDoFirebase();
+            carregarDashboard();
+            carregarRetirada();
+            carregarMesAnoAtual();
+            
+            setTimeout(() => {
+                showAlert('Lembrete: Apenas colaboradores com data de início menor ou igual ao novo mês aparecerão como PENDENTES.', 'info');
+            }, 1000);
+        }
+
+        // ==================== LIMPAR RETIRADAS ====================
+        function abrirModalLimparRetiradas() {
+            document.getElementById('confirmacaoLimpar').value = '';
+            document.getElementById('btnConfirmarLimpeza').disabled = true;
+            
+            document.getElementById('confirmacaoLimpar').addEventListener('input', function() {
+                const btn = document.getElementById('btnConfirmarLimpeza');
+                btn.disabled = this.value.toUpperCase() !== 'LIMPAR';
+            });
+            
+            openModal('modalLimparRetiradas');
+        }
+
+        async function confirmarLimpezaRetiradas() {
+            const confirmacao = document.getElementById('confirmacaoLimpar').value;
+            
+            if (confirmacao.toUpperCase() !== 'LIMPAR') {
+                showAlert('Digite "LIMPAR" para confirmar a ação!', 'error');
+                return;
+            }
+            
+            const sucesso = await limparTodasRetiradasFirebase();
+            if (sucesso) {
+                showAlert('Todas as retiradas foram limpas com sucesso!', 'success');
+                retiradasLista = [];
+                
+                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
+                historico.push({
+                    data: new Date().toISOString(),
+                    acao: 'Limpeza completa de retiradas',
+                    realizadoPor: currentUser?.email || 'Sistema'
+                });
+                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
+                
+                carregarDashboard();
+                carregarRetirada();
+            } else {
+                showAlert('Erro ao limpar as retiradas!', 'error');
+            }
+            
+            closeModal('modalLimparRetiradas');
+        }
+
         // ==================== RELATÓRIOS ====================
         function carregarMesAnoAtual() {
             const [ano, mes] = mesAtual.split('-').map(Number);
@@ -4276,6 +4549,34 @@
             } catch (erro) {
                 console.error("Erro ao carregar retiradas do mês:", erro);
                 return [];
+            }
+        }
+
+        function filtrarRelatorioPorConformidade() {
+            const conformidadeSelecionada = document.getElementById('conformidadeRelatorio').value;
+            
+            const containerRetirados = document.getElementById('listaRetirados');
+            const containerPendentes = document.getElementById('listaNaoRetiraram');
+            
+            if (conformidadeSelecionada === 'dentro') {
+                const dentroPrazo = relatorioAtual.retiradas.filter(r => r.dentroDoPrazo === true);
+                const colaboradoresDentroPrazo = dentroPrazo.map(r => {
+                    return colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
+                }).filter(c => c);
+                
+                atualizarListaRetirados(colaboradoresDentroPrazo, dentroPrazo);
+                document.getElementById('contadorRetirados').textContent = `(${colaboradoresDentroPrazo.length})`;
+            } else if (conformidadeSelecionada === 'fora') {
+                const foraPrazo = relatorioAtual.retiradas.filter(r => r.dentroDoPrazo === false);
+                const colaboradoresForaPrazo = foraPrazo.map(r => {
+                    return colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
+                }).filter(c => c);
+                
+                atualizarListaRetirados(colaboradoresForaPrazo, foraPrazo);
+                document.getElementById('contadorRetirados').textContent = `(${colaboradoresForaPrazo.length})`;
+            } else {
+                atualizarListaRetirados(relatorioAtual.jaRetiraram, relatorioAtual.retiradas);
+                document.getElementById('contadorRetirados').textContent = `(${relatorioAtual.jaRetiraram.length})`;
             }
         }
 
@@ -5138,7 +5439,7 @@
             }
             
             document.addEventListener('click', function(event) {
-                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalConfigurarPrazo', 'modalRetirada', 'modalDetalhesRetirada', 'confirmacaoRetirada'];
+                const modals = ['modalColaborador', 'modalDepartamentos', 'modalEmpresas', 'modalConfigurarPrazo', 'modalNovoMes', 'modalRetirada', 'modalDetalhesRetirada', 'modalLimparRetiradas', 'confirmacaoRetirada'];
                 modals.forEach(modalId => {
                     const modal = document.getElementById(modalId);
                     if (modal && modal.style.display === 'block' && event.target === modal) {
