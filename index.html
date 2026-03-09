@@ -1144,7 +1144,7 @@
                     
                     <div class="sync-status">
                         <div class="status-dot"></div>
-                        <span id="syncStatusText">Sincronizado</span>
+                        <span>Sincronizado</span>
                     </div>
                 </div>
 
@@ -1908,7 +1908,7 @@
                     </div>
                 </div>
 
-                <div id="configuracoesSalvas" style="display: none;">
+                <div id="configuracoesSalvas" class="config-prazo-mensal" style="display: none;">
                     <h4 style="margin-bottom: 15px; color: var(--wsnet-primary-dark);">
                         Configuração para <span id="mesAnoSelecionado"></span>
                     </h4>
@@ -1925,6 +1925,7 @@
                             <div class="data-input-group">
                                 <select class="form-control" id="diaSelecionado">
                                     <option value="">Selecione um dia...</option>
+                                    <!-- Preenchido via JavaScript -->
                                 </select>
                                 <button type="button" class="btn btn-primary" onclick="adicionarDataConfiguracao()">
                                     <span class="material-icons">add</span>
@@ -2113,7 +2114,7 @@
     </div>
 
     <script>
-        // ==================== SISTEMA COMPLETO COM SINCRONIZAÇÃO EM TEMPO REAL ====================
+        // ==================== SISTEMA COMPLETO COM CONFIGURAÇÃO POR MÊS (DATAS ESPECÍFICAS) ====================
         let currentUser = null;
         let colaboradorSelecionado = null;
         let dependentesEditando = [];
@@ -2130,8 +2131,6 @@
         let escutaEmpresasAtiva = false;
         let escutaDepartamentosAtiva = false;
         let configuracoesPrazoMensal = {};
-        let escutaConfiguracoesAtiva = false;
-        let escutaMesAtualAtiva = false;
         let relatorioAtual = {
             jaRetiraram: [],
             naoRetiraram: [],
@@ -2181,7 +2180,7 @@
             sessionStorage.removeItem('sessaoUsuario');
         }
 
-        // ==================== BANCO DE DADOS LOCAL (FALLBACK) ====================
+        // ==================== BANCO DE DADOS LOCAL ====================
         class LocalDatabase {
             constructor() {
                 this.initDatabase();
@@ -2282,6 +2281,36 @@
                 localStorage.setItem('usuarios', JSON.stringify(usuarios));
             }
 
+            getMesAtual() {
+                const config = this.getConfig();
+                return config.mesAtual;
+            }
+
+            setMesAtual(mes) {
+                const config = this.getConfig();
+                config.mesAtual = mes;
+                localStorage.setItem('config', JSON.stringify(config));
+                mesAtual = mes;
+            }
+
+            getConfig() {
+                try {
+                    return JSON.parse(localStorage.getItem('config')) || {
+                        mesAtual: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
+                        empresaNome: 'WSNET TELECOM',
+                        empresaEndereco: 'Rua Exemplo, 123 - Centro',
+                        empresaTelefone: '(11) 99999-9999'
+                    };
+                } catch (error) {
+                    return {
+                        mesAtual: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
+                        empresaNome: 'WSNET TELECOM',
+                        empresaEndereco: 'Rua Exemplo, 123 - Centro',
+                        empresaTelefone: '(11) 99999-9999'
+                    };
+                }
+            }
+
             getUsuarios() {
                 try {
                     return JSON.parse(localStorage.getItem('usuarios')) || [];
@@ -2301,270 +2330,38 @@
                     return u.email.toLowerCase() === email && u.senha === senha;
                 });
             }
-        }
-
-        // ==================== FUNÇÕES FIREBASE PARA MÊS ATUAL ====================
-        async function carregarMesAtualDoFirebase() {
-            try {
-                const db = window.firebaseDb;
-                const { collection, getDocs, query } = window.firebaseCollections;
-                
-                const configRef = collection(db, "configuracoes");
-                const q = query(configRef);
-                const querySnapshot = await getDocs(q);
-                
-                let mesAtualEncontrado = null;
-                
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (data.chave === 'mesAtual') {
-                        mesAtualEncontrado = data.valor;
-                    }
-                });
-                
-                if (mesAtualEncontrado) {
-                    mesAtual = mesAtualEncontrado;
-                    document.getElementById('syncStatusText').textContent = 'Sincronizado';
-                } else {
-                    // Se não existir, criar com valor padrão
-                    const valorPadrao = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
-                    await addDoc(collection(db, "configuracoes"), {
-                        chave: 'mesAtual',
-                        valor: valorPadrao,
-                        updatedAt: new Date().toISOString(),
-                        updatedBy: 'Sistema'
-                    });
-                    mesAtual = valorPadrao;
-                }
-                
-                return mesAtual;
-            } catch (erro) {
-                console.error("Erro ao carregar mês atual do Firebase:", erro);
-                document.getElementById('syncStatusText').textContent = 'Offline';
-                
-                // Fallback para localStorage
-                const db = new LocalDatabase();
-                mesAtual = db.getMesAtual();
-                return mesAtual;
-            }
-        }
-
-        function iniciarEscutaMesAtualEmTempoReal() {
-            if (escutaMesAtualAtiva) return;
             
-            try {
-                const db = window.firebaseDb;
-                const { collection, onSnapshot, query, where } = window.firebaseCollections;
-                
-                const configRef = collection(db, "configuracoes");
-                const q = query(configRef, where("chave", "==", "mesAtual"));
-                
-                onSnapshot(q, (querySnapshot) => {
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const novoMesAtual = data.valor;
-                        
-                        if (novoMesAtual && novoMesAtual !== mesAtual) {
-                            console.log(`Mês atual alterado de ${mesAtual} para ${novoMesAtual} por outro usuário`);
-                            mesAtual = novoMesAtual;
-                            
-                            // Atualizar todas as interfaces
-                            carregarConfiguracaoPrazoParaMes();
-                            carregarRetiradasDoFirebase().then(() => {
-                                carregarDashboard();
-                                carregarRetirada();
-                                carregarMesAnoAtual();
-                                showAlert(`Mês atual alterado para ${formatarMesAno(mesAtual)} por outro administrador.`, 'info');
-                            });
-                        }
-                    });
-                    escutaMesAtualAtiva = true;
-                }, (erro) => {
-                    console.error("Erro na escuta do mês atual:", erro);
-                    escutaMesAtualAtiva = false;
-                });
-                
-            } catch (erro) {
-                console.error("Erro ao iniciar escuta do mês atual:", erro);
-            }
-        }
-
-        async function salvarMesAtualNoFirebase(novoMes) {
-            try {
-                const db = window.firebaseDb;
-                const { collection, getDocs, addDoc, deleteDoc, doc, query, where } = window.firebaseCollections;
-                
-                const configRef = collection(db, "configuracoes");
-                const q = query(configRef, where("chave", "==", "mesAtual"));
-                const querySnapshot = await getDocs(q);
-                
-                // Remover configurações antigas
-                const deletePromises = [];
-                querySnapshot.forEach((document) => {
-                    deletePromises.push(deleteDoc(doc(db, "configuracoes", document.id)));
-                });
-                await Promise.all(deletePromises);
-                
-                // Adicionar nova configuração
-                await addDoc(collection(db, "configuracoes"), {
-                    chave: 'mesAtual',
-                    valor: novoMes,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: currentUser?.email || 'Sistema'
-                });
-                
-                mesAtual = novoMes;
-                
-                // Salvar histórico no Firebase também
-                await salvarHistoricoRetiradasNoFirebase();
-                
-                return true;
-            } catch (erro) {
-                console.error("Erro ao salvar mês atual no Firebase:", erro);
-                return false;
-            }
-        }
-
-        async function salvarHistoricoRetiradasNoFirebase() {
-            try {
-                const db = window.firebaseDb;
-                const { collection, addDoc } = window.firebaseCollections;
-                
-                const [anoAntigo, mesAntigo] = mesAtual.split('-');
-                const meses = [
-                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-                ];
-                
-                // Calcular dentro/fora do prazo
-                const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
-                
-                const historico = {
-                    mes: mesAtual,
-                    mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
-                    totalRetiradas: retiradasLista.length,
-                    dentroPrazo: dentroPrazo,
-                    foraPrazo: retiradasLista.length - dentroPrazo,
-                    taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
-                    totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length,
-                    percentual: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length > 0 ? 
-                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length) * 100).toFixed(1) : 0,
-                    dataEncerramento: new Date().toISOString(),
-                    realizadoPor: currentUser?.email || 'Sistema',
-                    nota: 'Mês encerrado automaticamente'
-                };
-                
-                await addDoc(collection(db, "historicoRetiradas"), historico);
-                
-                // Também salvar no localStorage como backup
-                const historicoLocal = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
-                historicoLocal.push(historico);
-                localStorage.setItem('historicoRetiradas', JSON.stringify(historicoLocal));
-                
-            } catch (erro) {
-                console.error("Erro ao salvar histórico no Firebase:", erro);
-            }
-        }
-
-        function formatarMesAno(mesReferencia) {
-            const [ano, mes] = mesReferencia.split('-').map(Number);
-            const meses = [
-                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-            ];
-            return `${meses[mes - 1]} de ${ano}`;
-        }
-
-        // ==================== FUNÇÕES DE PRAZO POR MÊS (SINCRONIZADAS) ====================
-        async function carregarConfiguracoesPrazoDoFirebase() {
-            try {
-                const db = window.firebaseDb;
-                const { collection, getDocs } = window.firebaseCollections;
-                
-                const querySnapshot = await getDocs(collection(db, "configuracoesPrazo"));
-                const configs = {};
-                
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    configs[data.mesReferencia] = {
-                        datasPermitidas: data.datasPermitidas || [],
-                        horaInicio: data.horaInicio || '08:00',
-                        horaFim: data.horaFim || '18:00'
-                    };
-                });
-                
-                configuracoesPrazoMensal = configs;
-                
-                // Atualizar localStorage como backup
-                localStorage.setItem('configuracoesPrazoMensal', JSON.stringify(configs));
-                
-                return configs;
-            } catch (erro) {
-                console.error("Erro ao carregar configurações do Firebase:", erro);
-                
-                // Fallback para localStorage
+            carregarConfiguracoesPrazoMensal() {
                 try {
                     const configs = JSON.parse(localStorage.getItem('configuracoesPrazoMensal')) || {};
                     configuracoesPrazoMensal = configs;
                     return configs;
-                } catch (e) {
+                } catch (error) {
                     configuracoesPrazoMensal = {};
                     return {};
                 }
             }
-        }
-
-        function iniciarEscutaConfiguracoesPrazoEmTempoReal() {
-            if (escutaConfiguracoesAtiva) return;
             
-            try {
-                const db = window.firebaseDb;
-                const { collection, onSnapshot } = window.firebaseCollections;
-                
-                const configRef = collection(db, "configuracoesPrazo");
-                
-                onSnapshot(configRef, (querySnapshot) => {
-                    const configs = {};
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        configs[data.mesReferencia] = {
-                            datasPermitidas: data.datasPermitidas || [],
-                            horaInicio: data.horaInicio || '08:00',
-                            horaFim: data.horaFim || '18:00'
-                        };
-                    });
-                    
-                    configuracoesPrazoMensal = configs;
-                    localStorage.setItem('configuracoesPrazoMensal', JSON.stringify(configs));
-                    
-                    // Se for o mês atual, atualizar interface
-                    if (mesAtual && configuracoesPrazoMensal[mesAtual]) {
-                        configuracaoAtual = configuracoesPrazoMensal[mesAtual];
-                        carregarConfiguracaoPrazoParaMes();
-                        
-                        // Recarregar dashboards se necessário
-                        if (document.getElementById('dashboard').classList.contains('active')) {
-                            carregarDashboard();
-                        }
-                        if (document.getElementById('retirada').classList.contains('active')) {
-                            carregarRetirada();
-                        }
-                    }
-                    
-                    escutaConfiguracoesAtiva = true;
-                }, (erro) => {
-                    console.error("Erro na escuta de configurações:", erro);
-                    escutaConfiguracoesAtiva = false;
-                });
-                
-            } catch (erro) {
-                console.error("Erro ao iniciar escuta de configurações:", erro);
+            salvarConfiguracaoPrazoMensal(mesReferencia, config) {
+                const configs = this.carregarConfiguracoesPrazoMensal();
+                configs[mesReferencia] = config;
+                localStorage.setItem('configuracoesPrazoMensal', JSON.stringify(configs));
+                configuracoesPrazoMensal = configs;
+            }
+            
+            getConfiguracaoPrazoPorMes(mesReferencia) {
+                this.carregarConfiguracoesPrazoMensal();
+                return configuracoesPrazoMensal[mesReferencia] || null;
             }
         }
 
+        // ==================== FUNÇÕES DE PRAZO POR MÊS (CORRIGIDAS) ====================
         function obterConfiguracaoPrazoParaMes(mesReferencia) {
-            if (configuracoesPrazoMensal[mesReferencia]) {
-                return configuracoesPrazoMensal[mesReferencia];
+            const db = new LocalDatabase();
+            const configSalva = db.getConfiguracaoPrazoPorMes(mesReferencia);
+            
+            if (configSalva) {
+                return configSalva;
             }
             
             // Configuração padrão - sem datas específicas
@@ -2608,7 +2405,7 @@
             
             // Se não há datas configuradas, considera que está dentro do prazo (sem restrição)
             if (!config.datasPermitidas || config.datasPermitidas.length === 0) {
-                return true;
+                return true; // Sem restrição de datas = dentro do prazo
             }
             
             // 1. Verificar se a data está entre as permitidas
@@ -2732,7 +2529,7 @@
             atualizarDatasUI();
         }
 
-        async function salvarConfiguracaoPrazoMensal() {
+        function salvarConfiguracaoPrazoMensal() {
             const mes = document.getElementById('mesConfigurar').value;
             const ano = document.getElementById('anoConfigurar').value;
             
@@ -2741,55 +2538,24 @@
                 return;
             }
             
-            const mesReferencia = `${ano}-${mes}`;
             const novaConfig = {
                 datasPermitidas: configuracaoAtual.datasPermitidas || [],
                 horaInicio: document.getElementById('horaInicio').value,
                 horaFim: document.getElementById('horaFim').value
             };
             
-            try {
-                const db = window.firebaseDb;
-                const { collection, addDoc, getDocs, query, where, deleteDoc, doc } = window.firebaseCollections;
-                
-                // Remover configuração antiga se existir
-                const configRef = collection(db, "configuracoesPrazo");
-                const q = query(configRef, where("mesReferencia", "==", mesReferencia));
-                const querySnapshot = await getDocs(q);
-                
-                const deletePromises = [];
-                querySnapshot.forEach((document) => {
-                    deletePromises.push(deleteDoc(doc(db, "configuracoesPrazo", document.id)));
-                });
-                await Promise.all(deletePromises);
-                
-                // Adicionar nova configuração
-                await addDoc(collection(db, "configuracoesPrazo"), {
-                    mesReferencia: mesReferencia,
-                    datasPermitidas: novaConfig.datasPermitidas,
-                    horaInicio: novaConfig.horaInicio,
-                    horaFim: novaConfig.horaFim,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: currentUser?.email || 'Sistema'
-                });
-                
-                showAlert(`Configuração salva para ${mesReferencia}!`, 'success');
-                
-                // Se for o mês atual, atualizar interface
-                if (mesReferencia === mesAtual) {
-                    carregarConfiguracaoPrazoParaMes();
-                    
-                    // Recarregar dashboards
-                    carregarDashboard();
-                    carregarRetirada();
-                }
-                
-                closeModal('modalConfigurarPrazo');
-                
-            } catch (erro) {
-                console.error("Erro ao salvar configuração:", erro);
-                showAlert('Erro ao salvar configuração. Tente novamente.', 'error');
+            const mesReferencia = `${ano}-${mes}`;
+            const db = new LocalDatabase();
+            db.salvarConfiguracaoPrazoMensal(mesReferencia, novaConfig);
+            
+            showAlert(`Configuração salva para ${mesReferencia}!`, 'success');
+            
+            // Se for o mês atual, atualizar interface
+            if (mesReferencia === mesAtual) {
+                carregarConfiguracaoPrazoParaMes();
             }
+            
+            closeModal('modalConfigurarPrazo');
         }
 
         // ==================== FUNÇÕES RESPONSIVAS ====================
@@ -2833,32 +2599,19 @@
             document.getElementById('pageTitle').textContent = 'Dashboard';
             document.getElementById('pageIcon').textContent = 'dashboard';
             
-            // Iniciar todas as escutas em tempo real
             try {
                 if (window.firebaseInitialized) {
-                    iniciarEscutaMesAtualEmTempoReal();
                     iniciarEscutaColaboradoresEmTempoReal();
                     iniciarEscutaRetiradasEmTempoReal();
                     iniciarEscutaEmpresasEmTempoReal();
                     iniciarEscutaDepartamentosEmTempoReal();
-                    iniciarEscutaConfiguracoesPrazoEmTempoReal();
                 }
             } catch (error) {
                 console.error('Erro ao iniciar escutas Firebase:', error);
-                document.getElementById('syncStatusText').textContent = 'Offline';
             }
             
-            // Carregar dados iniciais
-            Promise.all([
-                carregarMesAtualDoFirebase(),
-                carregarConfiguracoesPrazoDoFirebase()
-            ]).then(() => {
-                carregarConfiguracaoPrazoParaMes();
-                carregarDashboard();
-                carregarRetirada();
-                carregarMesAnoAtual();
-            });
-            
+            carregarConfiguracaoPrazoParaMes();
+            carregarDashboard();
             handleResize();
         }
 
@@ -2891,6 +2644,9 @@
                         
                         salvarSessaoUsuario(usuario);
                         
+                        mesAtual = db.getMesAtual();
+                        console.log('Mês atual carregado do localStorage:', mesAtual);
+                        
                         document.getElementById('userName').textContent = usuario.nome;
                         document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
                         document.getElementById('userRole').className = 'user-role';
@@ -2922,7 +2678,7 @@
             } else if (currentUser.role === 'registrador') {
                 if (adminButtons) adminButtons.style.display = 'none';
                 menuItems.forEach(item => {
-                    if (!item.textContent.includes('Retiradas') && !item.textContent.includes('Dashboard')) {
+                    if (!item.textContent.includes('Retiradas')) {
                         item.style.display = 'none';
                     } else {
                         item.style.display = 'flex';
@@ -2944,8 +2700,6 @@
             escutaRetiradasAtiva = false;
             escutaEmpresasAtiva = false;
             escutaDepartamentosAtiva = false;
-            escutaConfiguracoesAtiva = false;
-            escutaMesAtualAtiva = false;
             showLoginScreen();
             showLoginAlert('Você saiu do sistema.', 'success');
         }
@@ -3017,8 +2771,8 @@
 
         // ==================== FUNÇÕES DE NAVEGAÇÃO ====================
         function showTab(tabName) {
-            if (currentUser && currentUser.role === 'registrador' && tabName !== 'retirada' && tabName !== 'dashboard') {
-                showAlert('Acesso restrito! Você só pode acessar as abas de Dashboard e Retiradas.', 'error');
+            if (currentUser && currentUser.role === 'registrador' && tabName !== 'retirada') {
+                showAlert('Acesso restrito! Você só pode acessar a aba de Retiradas.', 'error');
                 return;
             }
             
@@ -3158,11 +2912,38 @@
                     const docRef = doc(db, "colaboradores", colaboradorId);
                     await updateDoc(docRef, colaboradorData);
                     showAlert('Colaborador atualizado com sucesso!', 'success');
+                    
+                    setTimeout(() => {
+                        if (document.getElementById('dashboard').classList.contains('active')) {
+                            carregarDashboard();
+                        }
+                        if (document.getElementById('retirada').classList.contains('active')) {
+                            carregarRetirada();
+                        }
+                        if (document.getElementById('colaboradores').classList.contains('active')) {
+                            carregarColaboradores();
+                        }
+                        if (document.getElementById('relatorios').classList.contains('active')) {
+                            carregarRelatorio();
+                        }
+                    }, 100);
                 } else {
                     colaboradorData.createdAt = new Date().toISOString();
                     colaboradorData.createdBy = currentUser?.email || "Sistema";
                     await addDoc(collection(db, "colaboradores"), colaboradorData);
                     showAlert('Colaborador cadastrado com sucesso!', 'success');
+                    
+                    setTimeout(() => {
+                        if (document.getElementById('dashboard').classList.contains('active')) {
+                            carregarDashboard();
+                        }
+                        if (document.getElementById('retirada').classList.contains('active')) {
+                            carregarRetirada();
+                        }
+                        if (document.getElementById('colaboradores').classList.contains('active')) {
+                            carregarColaboradores();
+                        }
+                    }, 100);
                 }
 
                 closeModal("modalColaborador");
@@ -3187,6 +2968,21 @@
                 const docRef = doc(db, "colaboradores", colaboradorId);
                 await deleteDoc(docRef);
                 showAlert('Colaborador excluído com sucesso!', 'success');
+                
+                setTimeout(() => {
+                    if (document.getElementById('dashboard').classList.contains('active')) {
+                        carregarDashboard();
+                    }
+                    if (document.getElementById('retirada').classList.contains('active')) {
+                        carregarRetirada();
+                    }
+                    if (document.getElementById('colaboradores').classList.contains('active')) {
+                        carregarColaboradores();
+                    }
+                    if (document.getElementById('relatorios').classList.contains('active')) {
+                        carregarRelatorio();
+                    }
+                }, 100);
             } catch (erro) {
                 console.error("Erro ao excluir:", erro);
                 showAlert('Erro ao excluir colaborador.', 'error');
@@ -3681,8 +3477,6 @@
 
         // ==================== DASHBOARD ====================
         function carregarDashboard() {
-            if (!mesAtual) return;
-            
             const empresaSelecionada = document.getElementById('filtroEmpresaDashboard').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeDashboard').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
@@ -3737,7 +3531,7 @@
                         '<span class="badge-fora-prazo" style="padding: 4px 12px; border-radius: 12px; font-size: 12px;">Fora do Prazo</span>';
                     
                     return `
-                        <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border); cursor: pointer;" onclick="verDetalhesRetirada('${retirada.id}')">
+                        <div class="list-item" style="display: flex; align-items: center; padding: 16px; background: var(--wsnet-bg-card); border-radius: var(--radius-md); margin-bottom: 10px; border: 1px solid var(--wsnet-border);" onclick="verDetalhesRetirada('${retirada.id}')">
                             <div style="width: 40px; height: 40px; background: var(--wsnet-bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; color: var(--wsnet-primary);">
                                 <span class="material-icons">${retirada.quemRetirouTipo === 'Colaborador' ? 'person' : 'family_restroom'}</span>
                             </div>
@@ -3868,8 +3662,6 @@
 
         // ==================== RETIRADA ====================
         function carregarRetirada() {
-            if (!mesAtual) return;
-            
             const empresaSelecionada = document.getElementById('filtroEmpresaRetirada').value;
             const cidadeSelecionada = document.getElementById('filtroCidadeRetirada').value;
             const colaboradoresFiltrados = filtrarPorEmpresaECidade(colaboradoresLista, empresaSelecionada, cidadeSelecionada);
@@ -4335,7 +4127,7 @@
             openModal('modalDepartamentos');
         }
 
-        function carregarListaDepartamentos() {
+        async function carregarListaDepartamentos() {
             const container = document.getElementById('listaDepartamentos');
             
             if (departamentosLista.length > 0) {
@@ -4575,7 +4367,7 @@
             retiradaPendente = null;
         }
 
-        // ==================== NOVO MÊS (SINCRONIZADO) ====================
+        // ==================== NOVO MÊS ====================
         function abrirModalNovoMes() {
             const [anoAtual, mesAtualNum] = mesAtual.split('-').map(Number);
             
@@ -4611,36 +4403,59 @@
             
             const novoMesCompleto = `${novoAno}-${novoMes}`;
             
-            // Salvar histórico no Firebase antes de mudar o mês
-            await salvarHistoricoRetiradasNoFirebase();
+            const db = new LocalDatabase();
             
-            // Atualizar mês atual no Firebase (isso irá sincronizar para todos os usuários)
-            const sucesso = await salvarMesAtualNoFirebase(novoMesCompleto);
-            
-            if (sucesso) {
+            if (retiradasLista.length > 0) {
+                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
+                const [anoAntigo, mesAntigo] = mesAtual.split('-');
                 const meses = [
                     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
                 ];
-                const mesFormatado = meses[parseInt(novoMes) - 1];
                 
-                showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico.`, 'success');
+                // Calcular dentro/fora do prazo usando a configuração DO MÊS ANTIGO
+                const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
                 
-                closeModal('modalNovoMes');
+                historico.push({
+                    mes: mesAtual,
+                    mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
+                    totalRetiradas: retiradasLista.length,
+                    dentroPrazo: dentroPrazo,
+                    foraPrazo: retiradasLista.length - dentroPrazo,
+                    taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
+                    totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length,
+                    percentual: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length > 0 ? 
+                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length) * 100).toFixed(1) : 0,
+                    dataEncerramento: new Date().toISOString(),
+                    realizadoPor: currentUser?.email || 'Sistema',
+                    nota: 'As cestas não retiradas NÃO foram marcadas como retiradas - todos os colaboradores com data de início válida ficam como PENDENTES no novo mês'
+                });
                 
-                // Recarregar tudo
-                await carregarRetiradasDoFirebase();
-                carregarConfiguracaoPrazoParaMes();
-                carregarDashboard();
-                carregarRetirada();
-                carregarMesAnoAtual();
-                
-                setTimeout(() => {
-                    showAlert('Lembrete: Apenas colaboradores com data de início menor ou igual ao novo mês aparecerão como PENDENTES.', 'info');
-                }, 1000);
-            } else {
-                showAlert('Erro ao iniciar novo mês. Tente novamente.', 'error');
+                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
             }
+            
+            db.setMesAtual(novoMesCompleto);
+            mesAtual = novoMesCompleto;
+            
+            const meses = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            const mesFormatado = meses[parseInt(novoMes) - 1];
+            
+            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico.`, 'success');
+            
+            closeModal('modalNovoMes');
+            
+            carregarConfiguracaoPrazoParaMes();
+            await carregarRetiradasDoFirebase();
+            carregarDashboard();
+            carregarRetirada();
+            carregarMesAnoAtual();
+            
+            setTimeout(() => {
+                showAlert('Lembrete: Apenas colaboradores com data de início menor ou igual ao novo mês aparecerão como PENDENTES.', 'info');
+            }, 1000);
         }
 
         // ==================== LIMPAR RETIRADAS ====================
@@ -4667,21 +4482,15 @@
             const sucesso = await limparTodasRetiradasFirebase();
             if (sucesso) {
                 showAlert('Todas as retiradas foram limpas com sucesso!', 'success');
+                retiradasLista = [];
                 
-                // Registrar no histórico
-                try {
-                    const db = window.firebaseDb;
-                    const { collection, addDoc } = window.firebaseCollections;
-                    
-                    await addDoc(collection(db, "historicoRetiradas"), {
-                        data: new Date().toISOString(),
-                        acao: 'Limpeza completa de retiradas',
-                        realizadoPor: currentUser?.email || 'Sistema',
-                        mesReferencia: mesAtual
-                    });
-                } catch (e) {
-                    console.error("Erro ao registrar limpeza:", e);
-                }
+                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
+                historico.push({
+                    data: new Date().toISOString(),
+                    acao: 'Limpeza completa de retiradas',
+                    realizadoPor: currentUser?.email || 'Sistema'
+                });
+                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
                 
                 carregarDashboard();
                 carregarRetirada();
@@ -4694,8 +4503,6 @@
 
         // ==================== RELATÓRIOS ====================
         function carregarMesAnoAtual() {
-            if (!mesAtual) return;
-            
             const [ano, mes] = mesAtual.split('-').map(Number);
             document.getElementById('mesRelatorio').value = String(mes).padStart(2, '0');
             document.getElementById('anoRelatorio').value = ano;
@@ -5551,7 +5358,7 @@
 
         // ==================== INICIALIZAÇÃO ====================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== SISTEMA INICIANDO COM SINCRONIZAÇÃO EM TEMPO REAL ===');
+            console.log('=== SISTEMA INICIANDO ===');
             
             try {
                 const db = new LocalDatabase();
@@ -5567,6 +5374,7 @@
                     const usuario = usuarios.find(u => u.email.toLowerCase() === sessao.email.toLowerCase());
                     if (usuario) {
                         currentUser = usuario;
+                        mesAtual = db.getMesAtual();
                         
                         document.getElementById('userName').textContent = usuario.nome;
                         document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
@@ -5575,6 +5383,21 @@
                         setupUserPermissions();
                         showMainApp();
                         console.log('Login automático realizado com sucesso!');
+                        
+                        carregarConfiguracaoPrazoParaMes();
+                        
+                        setTimeout(() => {
+                            try {
+                                if (window.firebaseInitialized) {
+                                    iniciarEscutaColaboradoresEmTempoReal();
+                                    iniciarEscutaRetiradasEmTempoReal();
+                                    iniciarEscutaEmpresasEmTempoReal();
+                                    iniciarEscutaDepartamentosEmTempoReal();
+                                }
+                            } catch (error) {
+                                console.error('Erro ao iniciar escutas Firebase:', error);
+                            }
+                        }, 500);
                         
                         return;
                     }
@@ -5630,7 +5453,7 @@
             empresasLista = [];
             departamentosLista = [];
             
-            console.log('=== SISTEMA PRONTO PARA USO COM SINCRONIZAÇÃO EM TEMPO REAL ===');
+            console.log('=== SISTEMA PRONTO PARA USO ===');
         });
     </script>
 </body>
