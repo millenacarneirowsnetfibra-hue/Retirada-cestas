@@ -929,12 +929,6 @@
                 align-items: flex-start;
                 gap: 15px;
             }
-            
-            .admin-actions {
-                width: 100%;
-                overflow-x: auto;
-                padding-bottom: 8px;
-            }
         }
 
         @media (max-width: 768px) {
@@ -1215,7 +1209,7 @@
                         </div>
                     </div>
                     
-                    <!-- Botões que só aparecem para admin -->
+                    <!-- Botões que só aparecem para admin (ÚNICO CONJUNTO) -->
                     <div class="admin-actions" id="adminButtons" style="display: none;">
                         <button type="button" class="btn btn-warning btn-sm" onclick="abrirModalNovoMes()">
                             <span class="material-icons">event_note</span>
@@ -1224,18 +1218,6 @@
                         <button type="button" class="btn btn-danger btn-sm" onclick="abrirModalLimparRetiradas()">
                             <span class="material-icons">delete_sweep</span>
                             Limpar Retiradas
-                        </button>
-                    </div>
-                    
-                    <!-- Mobile Actions (só aparecem para admin) -->
-                    <div class="mobile-actions" id="mobileAdminButtons" style="display: none;">
-                        <button type="button" class="btn btn-warning btn-sm mobile-action-btn" onclick="abrirModalNovoMes()">
-                            <span class="material-icons">event_note</span>
-                            Novo Mês
-                        </button>
-                        <button type="button" class="btn btn-danger btn-sm mobile-action-btn" onclick="abrirModalLimparRetiradas()">
-                            <span class="material-icons">delete_sweep</span>
-                            Limpar
                         </button>
                     </div>
                 </div>
@@ -2671,16 +2653,13 @@
 
         function setupUserPermissions() {
             const adminButtons = document.getElementById('adminButtons');
-            const mobileAdminButtons = document.getElementById('mobileAdminButtons');
             const menuItems = document.querySelectorAll('.menu-item');
             
             if (currentUser.role === 'admin') {
                 if (adminButtons) adminButtons.style.display = 'flex';
-                if (mobileAdminButtons) mobileAdminButtons.style.display = 'flex';
                 menuItems.forEach(item => item.style.display = 'flex');
             } else if (currentUser.role === 'registrador') {
                 if (adminButtons) adminButtons.style.display = 'none';
-                if (mobileAdminButtons) mobileAdminButtons.style.display = 'none';
                 menuItems.forEach(item => {
                     if (!item.textContent.includes('Retiradas')) {
                         item.style.display = 'none';
