@@ -1241,6 +1241,7 @@
                                 <option value="Itanhaém">Itanhaém</option>
                                 <option value="Mongaguá">Mongaguá</option>
                                 <option value="Peruíbe">Peruíbe</option>
+                                <option value="Gaivotas">Gaivotas</option>
                             </select>
                         </div>
                     </div>
@@ -1381,6 +1382,7 @@
                                     <option value="Itanhaém">Itanhaém</option>
                                     <option value="Mongaguá">Mongaguá</option>
                                     <option value="Peruíbe">Peruíbe</option>
+                                    <option value="Gaivotas">Gaivotas</option>
                                 </select>
                             </div>
                             <div class="filter-group">
@@ -1434,6 +1436,7 @@
                                     <option value="Itanhaém">Itanhaém</option>
                                     <option value="Mongaguá">Mongaguá</option>
                                     <option value="Peruíbe">Peruíbe</option>
+                                    <option value="Gaivotas">Gaivotas</option>
                                 </select>
                             </div>
                             <div class="filter-group">
@@ -1531,6 +1534,7 @@
                                     <option value="Itanhaém">Itanhaém</option>
                                     <option value="Mongaguá">Mongaguá</option>
                                     <option value="Peruíbe">Peruíbe</option>
+                                    <option value="Gaivotas">Gaivotas</option>
                                 </select>
                             </div>
                             <div class="filter-group">
@@ -1686,6 +1690,7 @@
                             <option value="Itanhaém">Itanhaém</option>
                             <option value="Mongaguá">Mongaguá</option>
                             <option value="Peruíbe">Peruíbe</option>
+                            <option value="Gaivotas">Gaivotas</option>
                         </select>
                     </div>
                     
@@ -3548,9 +3553,9 @@
 
         function atualizarDistribuicaoCidade(colaboradoresAtivos, retiradasFiltradas) {
             const container = document.getElementById('distribuicaoCidade');
-            const cidades = ['Itanhaém', 'Mongaguá', 'Peruíbe'];
+            const cidades = ['Itanhaém', 'Mongaguá', 'Peruíbe', 'Gaivotas'];
             
-            let distribuiçãoHTML = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">';
+            let distribuiçãoHTML = '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">';
             
             cidades.forEach(cidade => {
                 const totalColaboradores = colaboradoresAtivos.filter(c => c.cidade === cidade).length;
