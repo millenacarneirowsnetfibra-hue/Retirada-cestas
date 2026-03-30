@@ -42,6 +42,9 @@
         window.firebaseDb = db;
         window.firebaseCollections = { collection, addDoc, getDocs, query, where, updateDoc, deleteDoc, doc, onSnapshot };
         window.firebaseInitialized = true;
+        
+        // Coleção para usuários no Firebase
+        const USUARIOS_COLLECTION = "usuarios_sistema";
     </script>
     <style>
         /* ====== VARIÁVEIS DA PALETA WSNET ====== */
@@ -1100,12 +1103,12 @@
                 <form id="loginForm">
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control" id="loginEmail" placeholder="seu@email.com" required value="gente.gestao@email.com">
+                        <input type="email" class="form-control" id="loginEmail" placeholder="seu@email.com" required>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Senha</label>
-                        <input type="password" class="form-control" id="loginPassword" placeholder="Sua senha" required value="wsnet1205*">
+                        <input type="password" class="form-control" id="loginPassword" placeholder="Sua senha" required>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block" id="btnLogin">
@@ -2102,7 +2105,7 @@
     </div>
 
     <script>
-        // ==================== SISTEMA COMPLETO COM CONFIGURAÇÃO POR MÊS (DATAS ESPECÍFICAS) ====================
+        // ==================== SISTEMA COMPLETO COM CONFIGURAÇÃO POR MÊS E FIREBASE CENTRALIZADO ====================
         let currentUser = null;
         let colaboradorSelecionado = null;
         let dependentesEditando = [];
@@ -2131,6 +2134,12 @@
         };
         
         let mesAtual = null;
+        
+        // Coleção para configs de prazo no Firebase
+        const CONFIG_PRAZO_COLLECTION = "configuracoes_prazo";
+        
+        // Coleção para histórico de meses no Firebase
+        const HISTORICO_COLLECTION = "historico_meses";
 
         // ==================== GERENCIAMENTO DE SESSÃO ====================
         function salvarSessaoUsuario(usuario) {
@@ -2167,233 +2176,143 @@
         function limparSessaoUsuario() {
             sessionStorage.removeItem('sessaoUsuario');
         }
-
-        // ==================== BANCO DE DADOS LOCAL ====================
-        class LocalDatabase {
-            constructor() {
-                this.initDatabase();
-            }
-
-            initDatabase() {
-                if (!localStorage.getItem('config')) {
-                    localStorage.setItem('config', JSON.stringify({
-                        mesAtual: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
-                        empresaNome: 'WSNET TELECOM',
-                        empresaEndereco: 'Rua Exemplo, 123 - Centro',
-                        empresaTelefone: '(11) 99999-9999'
-                    }));
-                }
+        
+        // ==================== FUNÇÕES DE CONFIGURAÇÃO GLOBAL NO FIREBASE ====================
+        async function carregarConfiguracaoGlobalFirebase() {
+            try {
+                const db = window.firebaseDb;
+                const { collection, getDocs, query, where } = window.firebaseCollections;
                 
-                if (!localStorage.getItem('configuracoesPrazoMensal')) {
-                    localStorage.setItem('configuracoesPrazoMensal', JSON.stringify({}));
-                }
+                // Carregar configuração do mês atual
+                const configsRef = collection(db, CONFIG_PRAZO_COLLECTION);
+                const q = query(configsRef, where("mesReferencia", "==", mesAtual));
+                const querySnapshot = await getDocs(q);
                 
-                if (!localStorage.getItem('historicoRetiradas')) {
-                    localStorage.setItem('historicoRetiradas', JSON.stringify([]));
-                }
-                
-                this.initUsuarios();
-            }
-
-            initUsuarios() {
-                const usuariosPadrao = [
-                    {
-                        email: 'gente.gestao@email.com',
-                        senha: 'wsnet1205*',
-                        role: 'admin',
-                        nome: 'Administrador'
-                    },
-                    {
-                        email: 'vinicius.mekacheski@email.com',
-                        senha: 'wsnet1205',
-                        role: 'registrador',
-                        nome: 'Vinicius Mekacheski'
-                    },
-                    {
-                        email: 'alexandre.chariff@email.com',
-                        senha: 'wsnet1205',
-                        role: 'registrador',
-                        nome: 'Alexandre Chariff'
-                    },
-                    {
-                        email: 'jonathan.cristian@email.com',
-                        senha: 'wsnet1205',
-                        role: 'registrador',
-                        nome: 'Jonathan Cristian'
-                    },
-                    {
-                        email: 'douglas.tadeu@email.com',
-                        senha: 'wsnet1205',
-                        role: 'registrador',
-                        nome: 'Douglas Tadeu'
-                    },
-                    {
-                        email: 'everton.fraga@email.com',
-                        senha: 'wsnet1205',
-                        role: 'registrador',
-                        nome: 'Everton Fraga'
-                    },
-                    {
-                        email: 'douglas.farias@email.com',
-                        senha: 'wsnet1205',
-                        role: 'registrador',
-                        nome: 'Douglas Farias'
-                    },
-                    {
-                        email: 'rogerio.pereira@email.com',
-                        senha: 'wsnet1205',
-                        role: 'registrador',
-                        nome: 'Rogerio Pereira'
-                    }
-                ];
-
-                let usuarios = [];
-                
-                if (localStorage.getItem('usuarios')) {
-                    try {
-                        usuarios = JSON.parse(localStorage.getItem('usuarios'));
-                    } catch (error) {
-                        usuarios = [];
-                    }
-                }
-                
-                usuarios = usuarios.filter(u => u.email !== 'retirada@email.com');
-                
-                usuariosPadrao.forEach(usuarioPadrao => {
-                    const existe = usuarios.find(u => u.email.toLowerCase() === usuarioPadrao.email.toLowerCase());
-                    if (!existe) {
-                        usuarios.push(usuarioPadrao);
-                    }
-                });
-                
-                localStorage.setItem('usuarios', JSON.stringify(usuarios));
-            }
-
-            getMesAtual() {
-                const config = this.getConfig();
-                return config.mesAtual;
-            }
-
-            setMesAtual(mes) {
-                const config = this.getConfig();
-                config.mesAtual = mes;
-                localStorage.setItem('config', JSON.stringify(config));
-                mesAtual = mes;
-            }
-
-            getConfig() {
-                try {
-                    return JSON.parse(localStorage.getItem('config')) || {
-                        mesAtual: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
-                        empresaNome: 'WSNET TELECOM',
-                        empresaEndereco: 'Rua Exemplo, 123 - Centro',
-                        empresaTelefone: '(11) 99999-9999'
+                if (!querySnapshot.empty) {
+                    const docData = querySnapshot.docs[0].data();
+                    configuracaoAtual = {
+                        datasPermitidas: docData.datasPermitidas || [],
+                        horaInicio: docData.horaInicio || '08:00',
+                        horaFim: docData.horaFim || '18:00'
                     };
-                } catch (error) {
+                } else {
+                    configuracaoAtual = {
+                        datasPermitidas: [],
+                        horaInicio: '08:00',
+                        horaFim: '18:00'
+                    };
+                }
+                
+                // Atualizar informações na interface
+                const prazoInfo = document.getElementById('prazoInfo');
+                const prazoInfoRetirada = document.getElementById('prazoInfoRetirada');
+                
+                if (prazoInfo) {
+                    const diasInfo = configuracaoAtual.datasPermitidas && configuracaoAtual.datasPermitidas.length > 0 
+                        ? `Dias: ${configuracaoAtual.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
+                        : 'Nenhuma data configurada (sem restrição)';
+                    prazoInfo.textContent = `${diasInfo} • Horário: ${configuracaoAtual.horaInicio} às ${configuracaoAtual.horaFim}`;
+                }
+                
+                if (prazoInfoRetirada) {
+                    const diasInfo = configuracaoAtual.datasPermitidas && configuracaoAtual.datasPermitidas.length > 0 
+                        ? `Dias: ${configuracaoAtual.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
+                        : 'Nenhuma data configurada (sem restrição)';
+                    prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> ${diasInfo} • ${configuracaoAtual.horaInicio} às ${configuracaoAtual.horaFim}`;
+                }
+                
+                return configuracaoAtual;
+            } catch (error) {
+                console.error("Erro ao carregar configuração de prazo:", error);
+                return configuracaoAtual;
+            }
+        }
+        
+        async function salvarConfiguracaoPrazoFirebase(mesReferencia, config) {
+            try {
+                const db = window.firebaseDb;
+                const { collection, getDocs, query, where, addDoc, updateDoc, doc } = window.firebaseCollections;
+                
+                const configsRef = collection(db, CONFIG_PRAZO_COLLECTION);
+                const q = query(configsRef, where("mesReferencia", "==", mesReferencia));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const docId = querySnapshot.docs[0].id;
+                    const docRef = doc(db, CONFIG_PRAZO_COLLECTION, docId);
+                    await updateDoc(docRef, {
+                        datasPermitidas: config.datasPermitidas,
+                        horaInicio: config.horaInicio,
+                        horaFim: config.horaFim,
+                        updatedAt: new Date().toISOString()
+                    });
+                } else {
+                    await addDoc(collection(db, CONFIG_PRAZO_COLLECTION), {
+                        mesReferencia: mesReferencia,
+                        datasPermitidas: config.datasPermitidas,
+                        horaInicio: config.horaInicio,
+                        horaFim: config.horaFim,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                
+                if (mesReferencia === mesAtual) {
+                    configuracaoAtual = config;
+                    carregarConfiguracaoGlobalFirebase();
+                }
+                
+                return true;
+            } catch (error) {
+                console.error("Erro ao salvar configuração:", error);
+                return false;
+            }
+        }
+        
+        async function obterConfiguracaoPrazoParaMes(mesReferencia) {
+            try {
+                const db = window.firebaseDb;
+                const { collection, getDocs, query, where } = window.firebaseCollections;
+                
+                const configsRef = collection(db, CONFIG_PRAZO_COLLECTION);
+                const q = query(configsRef, where("mesReferencia", "==", mesReferencia));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    const docData = querySnapshot.docs[0].data();
                     return {
-                        mesAtual: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0'),
-                        empresaNome: 'WSNET TELECOM',
-                        empresaEndereco: 'Rua Exemplo, 123 - Centro',
-                        empresaTelefone: '(11) 99999-9999'
+                        datasPermitidas: docData.datasPermitidas || [],
+                        horaInicio: docData.horaInicio || '08:00',
+                        horaFim: docData.horaFim || '18:00'
                     };
                 }
-            }
-
-            getUsuarios() {
-                try {
-                    return JSON.parse(localStorage.getItem('usuarios')) || [];
-                } catch (error) {
-                    return [];
-                }
-            }
-
-            buscarUsuario(email, senha) {
-                email = email ? email.trim().toLowerCase() : '';
-                senha = senha ? senha.trim() : '';
                 
-                const usuarios = this.getUsuarios();
-                if (usuarios.length === 0) return null;
-                
-                return usuarios.find(u => {
-                    return u.email.toLowerCase() === email && u.senha === senha;
-                });
-            }
-            
-            carregarConfiguracoesPrazoMensal() {
-                try {
-                    const configs = JSON.parse(localStorage.getItem('configuracoesPrazoMensal')) || {};
-                    configuracoesPrazoMensal = configs;
-                    return configs;
-                } catch (error) {
-                    configuracoesPrazoMensal = {};
-                    return {};
-                }
-            }
-            
-            salvarConfiguracaoPrazoMensal(mesReferencia, config) {
-                const configs = this.carregarConfiguracoesPrazoMensal();
-                configs[mesReferencia] = config;
-                localStorage.setItem('configuracoesPrazoMensal', JSON.stringify(configs));
-                configuracoesPrazoMensal = configs;
-            }
-            
-            getConfiguracaoPrazoPorMes(mesReferencia) {
-                this.carregarConfiguracoesPrazoMensal();
-                return configuracoesPrazoMensal[mesReferencia] || null;
+                return {
+                    datasPermitidas: [],
+                    horaInicio: '08:00',
+                    horaFim: '18:00'
+                };
+            } catch (error) {
+                console.error("Erro ao obter configuração:", error);
+                return {
+                    datasPermitidas: [],
+                    horaInicio: '08:00',
+                    horaFim: '18:00'
+                };
             }
         }
 
-        // ==================== FUNÇÕES DE PRAZO POR MÊS (CORRIGIDAS) ====================
-        function obterConfiguracaoPrazoParaMes(mesReferencia) {
-            const db = new LocalDatabase();
-            const configSalva = db.getConfiguracaoPrazoPorMes(mesReferencia);
-            
-            if (configSalva) {
-                return configSalva;
-            }
-            
-            // Configuração padrão - sem datas específicas
-            return {
-                datasPermitidas: [],
-                horaInicio: '08:00',
-                horaFim: '18:00'
-            };
-        }
-
-        function carregarConfiguracaoPrazoParaMes() {
+        async function carregarConfiguracaoPrazoParaMes() {
             if (!mesAtual) return;
-            
-            const config = obterConfiguracaoPrazoParaMes(mesAtual);
-            configuracaoAtual = config;
-            
-            // Atualizar informações na interface
-            const prazoInfo = document.getElementById('prazoInfo');
-            const prazoInfoRetirada = document.getElementById('prazoInfoRetirada');
-            
-            if (prazoInfo) {
-                const diasInfo = config.datasPermitidas && config.datasPermitidas.length > 0 
-                    ? `Dias: ${config.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
-                    : 'Nenhuma data configurada (sem restrição)';
-                prazoInfo.textContent = `${diasInfo} • Horário: ${config.horaInicio} às ${config.horaFim}`;
-            }
-            
-            if (prazoInfoRetirada) {
-                const diasInfo = config.datasPermitidas && config.datasPermitidas.length > 0 
-                    ? `Dias: ${config.datasPermitidas.sort((a, b) => a - b).join(', ')}` 
-                    : 'Nenhuma data configurada (sem restrição)';
-                prazoInfoRetirada.innerHTML = `<span class="material-icons" style="font-size: 16px; vertical-align: middle;">info</span> ${diasInfo} • ${config.horaInicio} às ${config.horaFim}`;
-            }
-            
-            return config;
+            await carregarConfiguracaoGlobalFirebase();
         }
 
         function verificarSeDentroDoPrazoParaMes(dataRetirada, mesReferencia) {
             const data = new Date(dataRetirada);
-            const config = obterConfiguracaoPrazoParaMes(mesReferencia);
+            const config = configuracaoAtual;
             
             // Se não há datas configuradas, considera que está dentro do prazo (sem restrição)
             if (!config.datasPermitidas || config.datasPermitidas.length === 0) {
-                return true; // Sem restrição de datas = dentro do prazo
+                return true;
             }
             
             // 1. Verificar se a data está entre as permitidas
@@ -2428,7 +2347,7 @@
             openModal('modalConfigurarPrazo');
         }
 
-        function carregarConfiguracaoPrazoPorMes() {
+        async function carregarConfiguracaoPrazoPorMes() {
             const mes = document.getElementById('mesConfigurar').value;
             const ano = document.getElementById('anoConfigurar').value;
             
@@ -2438,7 +2357,7 @@
             }
             
             const mesReferencia = `${ano}-${mes}`;
-            const config = obterConfiguracaoPrazoParaMes(mesReferencia);
+            const config = await obterConfiguracaoPrazoParaMes(mesReferencia);
             
             const meses = [
                 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -2517,7 +2436,7 @@
             atualizarDatasUI();
         }
 
-        function salvarConfiguracaoPrazoMensal() {
+        async function salvarConfiguracaoPrazoMensal() {
             const mes = document.getElementById('mesConfigurar').value;
             const ano = document.getElementById('anoConfigurar').value;
             
@@ -2533,14 +2452,12 @@
             };
             
             const mesReferencia = `${ano}-${mes}`;
-            const db = new LocalDatabase();
-            db.salvarConfiguracaoPrazoMensal(mesReferencia, novaConfig);
+            const sucesso = await salvarConfiguracaoPrazoFirebase(mesReferencia, novaConfig);
             
-            showAlert(`Configuração salva para ${mesReferencia}!`, 'success');
-            
-            // Se for o mês atual, atualizar interface
-            if (mesReferencia === mesAtual) {
-                carregarConfiguracaoPrazoParaMes();
+            if (sucesso) {
+                showAlert(`Configuração salva para ${mesReferencia}!`, 'success');
+            } else {
+                showAlert('Erro ao salvar configuração.', 'error');
             }
             
             closeModal('modalConfigurarPrazo');
@@ -2603,7 +2520,7 @@
             handleResize();
         }
 
-        function login(email, password) {
+        async function login(email, password) {
             const btnLogin = document.getElementById('btnLogin');
             const originalText = btnLogin.innerHTML;
             
@@ -2615,45 +2532,73 @@
                 loginAlert.style.display = 'none';
             }
 
-            setTimeout(() => {
-                try {
-                    if (!email || !password) {
-                        showLoginAlert('Por favor, preencha email e senha!', 'error');
-                        btnLogin.innerHTML = originalText;
-                        btnLogin.disabled = false;
-                        return;
-                    }
-                    
-                    const db = new LocalDatabase();
-                    const usuario = db.buscarUsuario(email, password);
-                    
-                    if (usuario) {
-                        currentUser = usuario;
-                        
-                        salvarSessaoUsuario(usuario);
-                        
-                        mesAtual = db.getMesAtual();
-                        console.log('Mês atual carregado do localStorage:', mesAtual);
-                        
-                        document.getElementById('userName').textContent = usuario.nome;
-                        document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
-                        document.getElementById('userRole').className = 'user-role';
-
-                        setupUserPermissions();
-                        showMainApp();
-                        showAlert(`Bem-vindo, ${usuario.nome}!`, 'success');
-                    } else {
-                        showLoginAlert('Email ou senha incorretos!', 'error');
-                    }
-                    
-                } catch (error) {
-                    console.error('ERRO DURANTE O LOGIN:', error);
-                    showLoginAlert('Erro ao fazer login. Tente novamente.', 'error');
-                } finally {
+            try {
+                if (!email || !password) {
+                    showLoginAlert('Por favor, preencha email e senha!', 'error');
                     btnLogin.innerHTML = originalText;
                     btnLogin.disabled = false;
+                    return;
                 }
-            }, 500);
+                
+                // Buscar usuários no Firebase
+                const db = window.firebaseDb;
+                const { collection, getDocs, query, where } = window.firebaseCollections;
+                
+                const usuariosRef = collection(db, USUARIOS_COLLECTION);
+                const q = query(usuariosRef, where("email", "==", email.toLowerCase()));
+                const querySnapshot = await getDocs(q);
+                
+                let usuario = null;
+                if (!querySnapshot.empty) {
+                    const userData = querySnapshot.docs[0].data();
+                    if (userData.senha === password) {
+                        usuario = {
+                            email: userData.email,
+                            nome: userData.nome,
+                            role: userData.role,
+                            id: querySnapshot.docs[0].id
+                        };
+                    }
+                }
+                
+                if (usuario) {
+                    currentUser = usuario;
+                    
+                    // Carregar mês atual do Firebase
+                    const configRef = collection(db, "config_global");
+                    const configQuery = await getDocs(configRef);
+                    if (!configQuery.empty) {
+                        const configData = configQuery.docs[0].data();
+                        mesAtual = configData.mesAtual;
+                    } else {
+                        mesAtual = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                        // Criar configuração inicial
+                        await addDoc(collection(db, "config_global"), {
+                            mesAtual: mesAtual,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                    
+                    salvarSessaoUsuario(usuario);
+                    
+                    document.getElementById('userName').textContent = usuario.nome;
+                    document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
+                    document.getElementById('userRole').className = 'user-role';
+
+                    setupUserPermissions();
+                    showMainApp();
+                    showAlert(`Bem-vindo, ${usuario.nome}!`, 'success');
+                } else {
+                    showLoginAlert('Email ou senha incorretos!', 'error');
+                }
+                
+            } catch (error) {
+                console.error('ERRO DURANTE O LOGIN:', error);
+                showLoginAlert('Erro ao fazer login. Tente novamente.', 'error');
+            } finally {
+                btnLogin.innerHTML = originalText;
+                btnLogin.disabled = false;
+            }
         }
 
         function setupUserPermissions() {
@@ -2900,38 +2845,11 @@
                     const docRef = doc(db, "colaboradores", colaboradorId);
                     await updateDoc(docRef, colaboradorData);
                     showAlert('Colaborador atualizado com sucesso!', 'success');
-                    
-                    setTimeout(() => {
-                        if (document.getElementById('dashboard').classList.contains('active')) {
-                            carregarDashboard();
-                        }
-                        if (document.getElementById('retirada').classList.contains('active')) {
-                            carregarRetirada();
-                        }
-                        if (document.getElementById('colaboradores').classList.contains('active')) {
-                            carregarColaboradores();
-                        }
-                        if (document.getElementById('relatorios').classList.contains('active')) {
-                            carregarRelatorio();
-                        }
-                    }, 100);
                 } else {
                     colaboradorData.createdAt = new Date().toISOString();
                     colaboradorData.createdBy = currentUser?.email || "Sistema";
                     await addDoc(collection(db, "colaboradores"), colaboradorData);
                     showAlert('Colaborador cadastrado com sucesso!', 'success');
-                    
-                    setTimeout(() => {
-                        if (document.getElementById('dashboard').classList.contains('active')) {
-                            carregarDashboard();
-                        }
-                        if (document.getElementById('retirada').classList.contains('active')) {
-                            carregarRetirada();
-                        }
-                        if (document.getElementById('colaboradores').classList.contains('active')) {
-                            carregarColaboradores();
-                        }
-                    }, 100);
                 }
 
                 closeModal("modalColaborador");
@@ -2956,21 +2874,6 @@
                 const docRef = doc(db, "colaboradores", colaboradorId);
                 await deleteDoc(docRef);
                 showAlert('Colaborador excluído com sucesso!', 'success');
-                
-                setTimeout(() => {
-                    if (document.getElementById('dashboard').classList.contains('active')) {
-                        carregarDashboard();
-                    }
-                    if (document.getElementById('retirada').classList.contains('active')) {
-                        carregarRetirada();
-                    }
-                    if (document.getElementById('colaboradores').classList.contains('active')) {
-                        carregarColaboradores();
-                    }
-                    if (document.getElementById('relatorios').classList.contains('active')) {
-                        carregarRelatorio();
-                    }
-                }, 100);
             } catch (erro) {
                 console.error("Erro ao excluir:", erro);
                 showAlert('Erro ao excluir colaborador.', 'error');
@@ -3476,8 +3379,6 @@
                 c.dataInicio <= mesAtual
             );
             
-            const colaboradoresInativos = colaboradoresFiltrados.filter(c => c.status === 'inativo');
-            
             const retiradasFiltradas = retiradasLista.filter(r => {
                 const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                 if (!colaborador) return false;
@@ -3494,7 +3395,6 @@
                 ? ((retiradasFiltradas.length / colaboradoresAtivos.length) * 100).toFixed(1) 
                 : 0;
             
-            // Calcular dentro/fora do prazo usando a configuração DO MÊS DA RETIRADA (não do mês atual)
             const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, r.mesReferencia)).length;
             const foraPrazo = retiradasFiltradas.length - dentroPrazo;
 
@@ -3791,7 +3691,6 @@
 
             const { quemRetirouId, quemRetirouNome, quemRetirouTipo } = retiradaPendente;
             
-            // Verificar prazo usando a configuração DO MÊS ATUAL (que é o mês da retirada)
             const dentroPrazo = verificarSeDentroDoPrazoParaMes(new Date().toISOString(), mesAtual);
             
             const retirada = {
@@ -3849,7 +3748,6 @@
             } else if (statusSelecionado === 'inativo') {
                 filtrados = filtrados.filter(c => c.status === 'inativo');
             }
-            // Se for 'todos', não filtra por status
             
             if (search) {
                 filtrados = filtrados.filter(colaborador => 
@@ -3886,8 +3784,6 @@
             
             if (colaboradores.length > 0) {
                 const itemsHTML = colaboradores.map(colaborador => {
-                    const podeRetirarEsteMes = colaborador.status === 'ativo' && colaborador.dataInicio && colaborador.dataInicio <= mesAtual;
-                    
                     return `
                     <div style="display: flex; align-items: center; padding: 16px; border-bottom: 1px solid var(--wsnet-border);">
                         <div style="flex: 2; display: flex; align-items: center;">
@@ -4322,7 +4218,6 @@
                 const docRefAntigo = doc(db, "retiradas", retiradaExistenteId);
                 await deleteDoc(docRefAntigo);
                 
-                // Verificar prazo usando a configuração DO MÊS ATUAL (que é o mês da correção)
                 const dentroPrazo = verificarSeDentroDoPrazoParaMes(new Date().toISOString(), mesAtual);
                 
                 const novaRetirada = {
@@ -4391,64 +4286,80 @@
             
             const novoMesCompleto = `${novoAno}-${novoMes}`;
             
-            const db = new LocalDatabase();
-            
-            if (retiradasLista.length > 0) {
-                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
-                const [anoAntigo, mesAntigo] = mesAtual.split('-');
+            try {
+                const db = window.firebaseDb;
+                const { collection, addDoc, getDocs, updateDoc, doc } = window.firebaseCollections;
+                
+                // Salvar histórico do mês atual
+                if (retiradasLista.length > 0) {
+                    const historicoRef = collection(db, HISTORICO_COLLECTION);
+                    const [anoAntigo, mesAntigo] = mesAtual.split('-');
+                    const meses = [
+                        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                    ];
+                    
+                    const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
+                    
+                    await addDoc(historicoRef, {
+                        mes: mesAtual,
+                        mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
+                        totalRetiradas: retiradasLista.length,
+                        dentroPrazo: dentroPrazo,
+                        foraPrazo: retiradasLista.length - dentroPrazo,
+                        taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
+                        totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length,
+                        percentual: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length > 0 ? 
+                            ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length) * 100).toFixed(1) : 0,
+                        dataEncerramento: new Date().toISOString(),
+                        realizadoPor: currentUser?.email || 'Sistema',
+                        nota: 'As cestas não retiradas NÃO foram marcadas como retiradas - todos os colaboradores com data de início válida ficam como PENDENTES no novo mês'
+                    });
+                }
+                
+                // Atualizar configuração global
+                const configRef = collection(db, "config_global");
+                const configSnapshot = await getDocs(configRef);
+                if (!configSnapshot.empty) {
+                    const configDoc = configSnapshot.docs[0];
+                    await updateDoc(doc(db, "config_global", configDoc.id), {
+                        mesAtual: novoMesCompleto,
+                        updatedAt: new Date().toISOString()
+                    });
+                } else {
+                    await addDoc(collection(db, "config_global"), {
+                        mesAtual: novoMesCompleto,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                
+                mesAtual = novoMesCompleto;
+                
+                await carregarConfiguracaoPrazoParaMes();
+                await carregarRetiradasDoFirebase();
+                
+                carregarDashboard();
+                carregarRetirada();
+                carregarMesAnoAtual();
+                
                 const meses = [
                     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
                 ];
+                const mesFormatado = meses[parseInt(novoMes) - 1];
                 
-                // Calcular dentro/fora do prazo usando a configuração DO MÊS ANTIGO
-                const dentroPrazo = retiradasLista.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, mesAtual)).length;
+                showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico.`, 'success');
                 
-                historico.push({
-                    mes: mesAtual,
-                    mesDescricao: `${meses[parseInt(mesAntigo) - 1]} de ${anoAntigo}`,
-                    totalRetiradas: retiradasLista.length,
-                    dentroPrazo: dentroPrazo,
-                    foraPrazo: retiradasLista.length - dentroPrazo,
-                    taxaConformidade: retiradasLista.length > 0 ? ((dentroPrazo / retiradasLista.length) * 100).toFixed(1) : 0,
-                    totalColaboradoresAtivos: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length,
-                    percentual: colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length > 0 ? 
-                        ((retiradasLista.length / colaboradoresLista.filter(c => c.status === 'ativo' && c.dataInicio <= mesAtual).length) * 100).toFixed(1) : 0,
-                    dataEncerramento: new Date().toISOString(),
-                    realizadoPor: currentUser?.email || 'Sistema',
-                    nota: 'As cestas não retiradas NÃO foram marcadas como retiradas - todos os colaboradores com data de início válida ficam como PENDENTES no novo mês'
-                });
+                closeModal('modalNovoMes');
                 
-                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
+                setTimeout(() => {
+                    showAlert('Lembrete: Apenas colaboradores com data de início menor ou igual ao novo mês aparecerão como PENDENTES.', 'info');
+                }, 1000);
+                
+            } catch (error) {
+                console.error("Erro ao iniciar novo mês:", error);
+                showAlert('Erro ao iniciar novo mês. Tente novamente.', 'error');
             }
-            
-            db.setMesAtual(novoMesCompleto);
-            mesAtual = novoMesCompleto;
-            
-            // Recarregar configuração de prazo para o novo mês
-            carregarConfiguracaoPrazoParaMes();
-            
-            // Recarregar retiradas do novo mês (vazio)
-            await carregarRetiradasDoFirebase();
-            
-            // Atualizar todas as interfaces
-            carregarDashboard();
-            carregarRetirada();
-            carregarMesAnoAtual();
-            
-            const meses = [
-                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-            ];
-            const mesFormatado = meses[parseInt(novoMes) - 1];
-            
-            showAlert(`Novo mês iniciado: ${mesFormatado} de ${novoAno}! As retiradas do mês anterior foram salvas no histórico.`, 'success');
-            
-            closeModal('modalNovoMes');
-            
-            setTimeout(() => {
-                showAlert('Lembrete: Apenas colaboradores com data de início menor ou igual ao novo mês aparecerão como PENDENTES.', 'info');
-            }, 1000);
         }
 
         // ==================== LIMPAR RETIRADAS ====================
@@ -4477,13 +4388,14 @@
                 showAlert('Todas as retiradas foram limpas com sucesso!', 'success');
                 retiradasLista = [];
                 
-                const historico = JSON.parse(localStorage.getItem('historicoRetiradas') || '[]');
-                historico.push({
+                // Salvar no histórico
+                const db = window.firebaseDb;
+                const { collection, addDoc } = window.firebaseCollections;
+                await addDoc(collection(db, HISTORICO_COLLECTION), {
                     data: new Date().toISOString(),
                     acao: 'Limpeza completa de retiradas',
                     realizadoPor: currentUser?.email || 'Sistema'
                 });
-                localStorage.setItem('historicoRetiradas', JSON.stringify(historico));
                 
                 carregarDashboard();
                 carregarRetirada();
@@ -4520,7 +4432,6 @@
             }
         }
 
-        // ==================== FUNÇÕES AUXILIARES RELATÓRIOS ====================
         async function carregarRetiradasPorMes(mesReferencia) {
             try {
                 const db = window.firebaseDb;
@@ -4605,6 +4516,9 @@
                     c.dataInicio <= mesSelecionado
                 );
                 
+                // Carregar configuração do mês do relatório para verificar prazo
+                const configRelatorio = await obterConfiguracaoPrazoParaMes(mesSelecionado);
+                
                 let retiradasFiltradas = retiradasMes.filter(r => {
                     const colaborador = colaboradoresLista.find(c => c.id === r.colaboradorTitularId);
                     if (!colaborador) return false;
@@ -4623,7 +4537,22 @@
                     : 0;
                 
                 // Verificar dentro/fora do prazo usando a configuração DO MÊS DA RETIRADA
-                const dentroPrazo = retiradasFiltradas.filter(r => verificarSeDentroDoPrazoParaMes(r.dataRetirada, r.mesReferencia)).length;
+                const dentroPrazo = retiradasFiltradas.filter(r => {
+                    const data = new Date(r.dataRetirada);
+                    const config = configRelatorio;
+                    if (!config.datasPermitidas || config.datasPermitidas.length === 0) return true;
+                    const dia = data.getDate();
+                    if (!config.datasPermitidas.includes(dia)) return false;
+                    const hora = data.getHours();
+                    const minutos = data.getMinutes();
+                    const [horaInicio, minInicio] = config.horaInicio.split(':').map(Number);
+                    const [horaFim, minFim] = config.horaFim.split(':').map(Number);
+                    const minutosTotal = hora * 60 + minutos;
+                    const minutosInicio = horaInicio * 60 + minInicio;
+                    const minutosFim = horaFim * 60 + minFim;
+                    return minutosTotal >= minutosInicio && minutosTotal <= minutosFim;
+                }).length;
+                
                 const foraPrazo = retiradasFiltradas.length - dentroPrazo;
                 const taxaConformidade = retiradasFiltradas.length > 0 
                     ? ((dentroPrazo / retiradasFiltradas.length) * 100).toFixed(1)
@@ -4656,7 +4585,7 @@
                 document.getElementById('relatorioForaPrazo').textContent = foraPrazo;
                 document.getElementById('relatorioConformidade').textContent = taxaConformidade + '%';
                 
-                atualizarListaRetirados(jaRetiraram, retiradasFiltradas);
+                atualizarListaRetirados(jaRetiraram, retiradasFiltradas, configRelatorio);
                 atualizarListaNaoRetiraram(naoRetiraram);
                 
                 document.getElementById('contadorRetirados').textContent = `(${jaRetiraram.length})`;
@@ -4676,14 +4605,34 @@
             }
         }
 
-        function atualizarListaRetirados(jaRetiraram, retiradasFiltradas) {
+        function atualizarListaRetirados(jaRetiraram, retiradasFiltradas, configRelatorio = null) {
             const containerRetirados = document.getElementById('listaRetirados');
             
             if (jaRetiraram.length > 0) {
                 containerRetirados.innerHTML = jaRetiraram.map(colab => {
                     const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
-                    // Verificar prazo usando a configuração DO MÊS DA RETIRADA
-                    const dentroPrazo = retiradaDoColab ? verificarSeDentroDoPrazoParaMes(retiradaDoColab.dataRetirada, retiradaDoColab.mesReferencia) : false;
+                    let dentroPrazo = false;
+                    if (retiradaDoColab) {
+                        const data = new Date(retiradaDoColab.dataRetirada);
+                        const config = configRelatorio || configuracaoAtual;
+                        if (!config.datasPermitidas || config.datasPermitidas.length === 0) {
+                            dentroPrazo = true;
+                        } else {
+                            const dia = data.getDate();
+                            if (!config.datasPermitidas.includes(dia)) {
+                                dentroPrazo = false;
+                            } else {
+                                const hora = data.getHours();
+                                const minutos = data.getMinutes();
+                                const [horaInicio, minInicio] = config.horaInicio.split(':').map(Number);
+                                const [horaFim, minFim] = config.horaFim.split(':').map(Number);
+                                const minutosTotal = hora * 60 + minutos;
+                                const minutosInicio = horaInicio * 60 + minInicio;
+                                const minutosFim = horaFim * 60 + minFim;
+                                dentroPrazo = minutosTotal >= minutosInicio && minutosTotal <= minutosFim;
+                            }
+                        }
+                    }
                     const badgePrazo = dentroPrazo ? 
                         '<span class="badge-dentro-prazo" style="padding: 2px 8px; border-radius: 8px; font-size: 11px;">Dentro do Prazo</span>' : 
                         '<span class="badge-fora-prazo" style="padding: 2px 8px; border-radius: 8px; font-size: 11px;">Fora do Prazo</span>';
@@ -4766,7 +4715,6 @@
             
             if (!retirada) return;
 
-            // Verificar prazo usando a configuração DO MÊS DA RETIRADA
             const dentroPrazo = verificarSeDentroDoPrazoParaMes(retirada.dataRetirada, retirada.mesReferencia);
             const badgePrazo = dentroPrazo ? 
                 '<span class="badge-dentro-prazo">Dentro do Prazo</span>' : 
@@ -5092,6 +5040,7 @@
                 currentY += 15;
                 
                 const retiradasMes = await carregarRetiradasPorMes(mesReferencia);
+                const configRelatorio = await obterConfiguracaoPrazoParaMes(mesReferencia);
                 
                 let colaboradoresFiltrados = [...colaboradoresLista];
                 if (empresaSelecionada !== 'todas') {
@@ -5143,7 +5092,25 @@
                         }
                         
                         const retiradaDoColab = retiradasFiltradas.find(r => r.colaboradorTitularId === colab.id);
-                        const dentroPrazo = retiradaDoColab ? verificarSeDentroDoPrazoParaMes(retiradaDoColab.dataRetirada, retiradaDoColab.mesReferencia) : false;
+                        let dentroPrazo = false;
+                        if (retiradaDoColab) {
+                            const data = new Date(retiradaDoColab.dataRetirada);
+                            if (!configRelatorio.datasPermitidas || configRelatorio.datasPermitidas.length === 0) {
+                                dentroPrazo = true;
+                            } else {
+                                const dia = data.getDate();
+                                if (configRelatorio.datasPermitidas.includes(dia)) {
+                                    const hora = data.getHours();
+                                    const minutos = data.getMinutes();
+                                    const [horaInicio, minInicio] = configRelatorio.horaInicio.split(':').map(Number);
+                                    const [horaFim, minFim] = configRelatorio.horaFim.split(':').map(Number);
+                                    const minutosTotal = hora * 60 + minutos;
+                                    const minutosInicio = horaInicio * 60 + minInicio;
+                                    const minutosFim = horaFim * 60 + minFim;
+                                    dentroPrazo = minutosTotal >= minutosInicio && minutosTotal <= minutosFim;
+                                }
+                            }
+                        }
                         const prazoInfo = dentroPrazo ? ' (Dentro do Prazo)' : ' (Fora do Prazo)';
                         
                         let linha = `${count}. ${colab.nome}${prazoInfo}`;
@@ -5234,9 +5201,7 @@
 
         // ==================== RECIBO ====================
         function gerarReciboHTML() {
-            const db = new LocalDatabase();
-            const config = db.getConfig();
-            const empresaNome = config.empresaNome || 'WSNET TELECOM';
+            const empresaNome = 'WSNET TELECOM';
             
             const colaborador = colaboradoresLista.find(c => c.id === ultimaRetiradaRegistrada.colaboradorTitularId);
             const dentroPrazo = ultimaRetiradaRegistrada.dentroDoPrazo ? 'Sim' : 'Não';
@@ -5350,24 +5315,72 @@
         }
 
         // ==================== INICIALIZAÇÃO ====================
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('=== SISTEMA INICIANDO ===');
             
             try {
-                const db = new LocalDatabase();
-                console.log('Banco de dados local inicializado com sucesso!');
+                // Verificar se há usuários no Firebase, se não, criar padrões
+                const db = window.firebaseDb;
+                const { collection, getDocs, addDoc } = window.firebaseCollections;
                 
-                const usuarios = db.getUsuarios();
-                console.log(`Total de usuários no sistema: ${usuarios.length}`);
+                const usuariosSnapshot = await getDocs(collection(db, USUARIOS_COLLECTION));
+                if (usuariosSnapshot.empty) {
+                    console.log('Criando usuários padrão no Firebase...');
+                    const usuariosPadrao = [
+                        { email: 'gente.gestao@email.com', senha: 'wsnet1205*', role: 'admin', nome: 'Administrador' },
+                        { email: 'vinicius.mekacheski@email.com', senha: 'wsnet1205', role: 'registrador', nome: 'Vinicius Mekacheski' },
+                        { email: 'alexandre.chariff@email.com', senha: 'wsnet1205', role: 'registrador', nome: 'Alexandre Chariff' },
+                        { email: 'jonathan.cristian@email.com', senha: 'wsnet1205', role: 'registrador', nome: 'Jonathan Cristian' },
+                        { email: 'douglas.tadeu@email.com', senha: 'wsnet1205', role: 'registrador', nome: 'Douglas Tadeu' },
+                        { email: 'everton.fraga@email.com', senha: 'wsnet1205', role: 'registrador', nome: 'Everton Fraga' },
+                        { email: 'douglas.farias@email.com', senha: 'wsnet1205', role: 'registrador', nome: 'Douglas Farias' },
+                        { email: 'rogerio.pereira@email.com', senha: 'wsnet1205', role: 'registrador', nome: 'Rogerio Pereira' }
+                    ];
+                    
+                    for (const usuario of usuariosPadrao) {
+                        await addDoc(collection(db, USUARIOS_COLLECTION), usuario);
+                    }
+                    console.log('Usuários padrão criados com sucesso!');
+                }
+                
+                // Verificar configuração global
+                const configSnapshot = await getDocs(collection(db, "config_global"));
+                if (configSnapshot.empty) {
+                    const mesAtualInicial = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                    await addDoc(collection(db, "config_global"), {
+                        mesAtual: mesAtualInicial,
+                        createdAt: new Date().toISOString()
+                    });
+                    console.log('Configuração global criada com mês:', mesAtualInicial);
+                }
                 
                 const sessao = recuperarSessaoUsuario();
                 if (sessao) {
-                    console.log('Sessão ativa encontrada na sessão atual. Fazendo login automático...');
+                    console.log('Sessão ativa encontrada. Fazendo login automático...');
                     
-                    const usuario = usuarios.find(u => u.email.toLowerCase() === sessao.email.toLowerCase());
+                    const usuariosSnapshotLogin = await getDocs(collection(db, USUARIOS_COLLECTION));
+                    let usuario = null;
+                    usuariosSnapshotLogin.forEach(doc => {
+                        const userData = doc.data();
+                        if (userData.email.toLowerCase() === sessao.email.toLowerCase()) {
+                            usuario = {
+                                email: userData.email,
+                                nome: userData.nome,
+                                role: userData.role,
+                                id: doc.id
+                            };
+                        }
+                    });
+                    
                     if (usuario) {
                         currentUser = usuario;
-                        mesAtual = db.getMesAtual();
+                        
+                        const configSnapshotGlobal = await getDocs(collection(db, "config_global"));
+                        if (!configSnapshotGlobal.empty) {
+                            mesAtual = configSnapshotGlobal.docs[0].data().mesAtual;
+                        } else {
+                            mesAtual = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                        }
                         
                         document.getElementById('userName').textContent = usuario.nome;
                         document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
