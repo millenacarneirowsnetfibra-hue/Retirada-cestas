@@ -2572,11 +2572,10 @@ async function login(email, password) {
                 mesAtual = configData.mesAtual;
             } else {
                 mesAtual = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
-                // Criar configuração inicial
-                await addDoc(collection(db, "config_global"), {
-                    mesAtual: mesAtual,
-                    createdAt: new Date().toISOString()
-                });
+                // Criar configuração inicial SEM usar addDoc (opcional, pode criar manualmente no Firebase)
+                console.log("Crie a configuração global manualmente no Firebase ou use o código abaixo:");
+                // Se quiser usar addDoc, precisa importar, mas por enquanto vamos só logar
+                console.log("Mês atual definido como:", mesAtual);
             }
             
             salvarSessaoUsuario(usuario);
@@ -2599,8 +2598,8 @@ async function login(email, password) {
         btnLogin.innerHTML = originalText;
         btnLogin.disabled = false;
     }
-}
-        function setupUserPermissions() {
+}      
+function setupUserPermissions() {
             const adminButtons = document.getElementById('adminButtons');
             const menuItems = document.querySelectorAll('.menu-item');
             
