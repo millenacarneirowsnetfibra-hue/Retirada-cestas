@@ -2520,87 +2520,86 @@
             handleResize();
         }
 
-        async function login(email, password) {
-            const btnLogin = document.getElementById('btnLogin');
-            const originalText = btnLogin.innerHTML;
-            
-            btnLogin.innerHTML = '<span class="material-icons">loop</span> Entrando...';
-            btnLogin.disabled = true;
-            
-            const loginAlert = document.getElementById('loginAlert');
-            if (loginAlert) {
-                loginAlert.style.display = 'none';
-            }
+async function login(email, password) {
+    const btnLogin = document.getElementById('btnLogin');
+    const originalText = btnLogin.innerHTML;
+    
+    btnLogin.innerHTML = '<span class="material-icons">loop</span> Entrando...';
+    btnLogin.disabled = true;
+    
+    const loginAlert = document.getElementById('loginAlert');
+    if (loginAlert) {
+        loginAlert.style.display = 'none';
+    }
 
-            try {
-                if (!email || !password) {
-                    showLoginAlert('Por favor, preencha email e senha!', 'error');
-                    btnLogin.innerHTML = originalText;
-                    btnLogin.disabled = false;
-                    return;
-                }
-                
-                // Buscar usuários no Firebase
-                const db = window.firebaseDb;
-                const { collection, getDocs, query, where } = window.firebaseCollections;
-                
-                const usuariosRef = collection(db, USUARIOS_COLLECTION);
-                const q = query(usuariosRef, where("email", "==", email.toLowerCase()));
-                const querySnapshot = await getDocs(q);
-                
-                let usuario = null;
-                if (!querySnapshot.empty) {
-                    const userData = querySnapshot.docs[0].data();
-                    if (userData.senha === password) {
-                        usuario = {
-                            email: userData.email,
-                            nome: userData.nome,
-                            role: userData.role,
-                            id: querySnapshot.docs[0].id
-                        };
-                    }
-                }
-                
-                if (usuario) {
-                    currentUser = usuario;
-                    
-                    // Carregar mês atual do Firebase
-                    const configRef = collection(db, "config_global");
-                    const configQuery = await getDocs(configRef);
-                    if (!configQuery.empty) {
-                        const configData = configQuery.docs[0].data();
-                        mesAtual = configData.mesAtual;
-                    } else {
-                        mesAtual = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
-                        // Criar configuração inicial
-                        await addDoc(collection(db, "config_global"), {
-                            mesAtual: mesAtual,
-                            createdAt: new Date().toISOString()
-                        });
-                    }
-                    
-                    salvarSessaoUsuario(usuario);
-                    
-                    document.getElementById('userName').textContent = usuario.nome;
-                    document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
-                    document.getElementById('userRole').className = 'user-role';
-
-                    setupUserPermissions();
-                    showMainApp();
-                    showAlert(`Bem-vindo, ${usuario.nome}!`, 'success');
-                } else {
-                    showLoginAlert('Email ou senha incorretos!', 'error');
-                }
-                
-            } catch (error) {
-                console.error('ERRO DURANTE O LOGIN:', error);
-                showLoginAlert('Erro ao fazer login. Tente novamente.', 'error');
-            } finally {
-                btnLogin.innerHTML = originalText;
-                btnLogin.disabled = false;
+    try {
+        if (!email || !password) {
+            showLoginAlert('Por favor, preencha email e senha!', 'error');
+            btnLogin.innerHTML = originalText;
+            btnLogin.disabled = false;
+            return;
+        }
+        
+        // Buscar usuários no Firebase
+        const db = window.firebaseDb;
+        const { collection, getDocs, query, where } = window.firebaseCollections;
+        
+        const usuariosRef = collection(db, "usuarios_sistema");
+        const q = query(usuariosRef, where("email", "==", email.toLowerCase()));
+        const querySnapshot = await getDocs(q);
+        
+        let usuario = null;
+        if (!querySnapshot.empty) {
+            const userData = querySnapshot.docs[0].data();
+            if (userData.senha === password) {
+                usuario = {
+                    email: userData.email,
+                    nome: userData.nome,
+                    role: userData.role,
+                    id: querySnapshot.docs[0].id
+                };
             }
         }
+        
+        if (usuario) {
+            currentUser = usuario;
+            
+            // Carregar mês atual do Firebase
+            const configRef = collection(db, "config_global");
+            const configSnapshot = await getDocs(configRef);
+            if (!configSnapshot.empty) {
+                const configData = configSnapshot.docs[0].data();
+                mesAtual = configData.mesAtual;
+            } else {
+                mesAtual = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0');
+                // Criar configuração inicial
+                await addDoc(collection(db, "config_global"), {
+                    mesAtual: mesAtual,
+                    createdAt: new Date().toISOString()
+                });
+            }
+            
+            salvarSessaoUsuario(usuario);
+            
+            document.getElementById('userName').textContent = usuario.nome;
+            document.getElementById('userRole').textContent = usuario.role === 'admin' ? 'Admin' : 'Registrador';
+            document.getElementById('userRole').className = 'user-role';
 
+            setupUserPermissions();
+            showMainApp();
+            showAlert(`Bem-vindo, ${usuario.nome}!`, 'success');
+        } else {
+            showLoginAlert('Email ou senha incorretos!', 'error');
+        }
+        
+    } catch (error) {
+        console.error('ERRO DURANTE O LOGIN:', error);
+        showLoginAlert('Erro ao fazer login. Tente novamente.', 'error');
+    } finally {
+        btnLogin.innerHTML = originalText;
+        btnLogin.disabled = false;
+    }
+}
         function setupUserPermissions() {
             const adminButtons = document.getElementById('adminButtons');
             const menuItems = document.querySelectorAll('.menu-item');
