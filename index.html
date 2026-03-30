@@ -5462,5 +5462,35 @@
             console.log('=== SISTEMA PRONTO PARA USO ===');
         });
     </script>
+<script>
+// Teste para verificar se a coleção está sendo acessada
+setTimeout(async function() {
+    console.log("=== TESTE DE CONEXÃO COM FIREBASE ===");
+    
+    try {
+        const db = window.firebaseDb;
+        const { collection, getDocs } = window.firebaseCollections;
+        
+        // Testar acesso à coleção de usuários
+        const usuariosRef = collection(db, "usuarios_sistema");
+        const querySnapshot = await getDocs(usuariosRef);
+        
+        console.log(`✅ Encontrados ${querySnapshot.size} usuários no Firebase`);
+        
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            console.log(`   - ${data.email} (${data.role})`);
+        });
+        
+        if (querySnapshot.size === 0) {
+            console.error("❌ Nenhum usuário encontrado! Verifique se a coleção 'usuarios_sistema' existe e tem documentos.");
+        }
+        
+    } catch (error) {
+        console.error("❌ Erro ao acessar Firebase:", error);
+        console.log("Verifique as regras de segurança do Firebase!");
+    }
+}, 1000);
+</script>
 </body>
 </html>
